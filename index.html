@@ -19,18 +19,25 @@ nav a{color:var(--fg);text-decoration:none;margin-left:18px}
 .logo-text.fade{opacity:0}
 .logo-text-footer{display:inline-block;transition:opacity .4s ease}
 .logo-text-footer.fade{opacity:0}
-.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;max-width:1100px;margin:auto;padding:100px 24px}
-.page-bg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:.45;z-index:0;pointer-events:none;overflow:hidden}
+.hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;max-width:1100px;margin:auto;padding:100px 24px;position:relative}
+.hero::before{content:'';position:absolute;inset:-20px -40px;background:radial-gradient(ellipse at 30% 50%, rgba(10,10,10,0.75) 0%, rgba(10,10,10,0.4) 60%, transparent 100%);z-index:0;pointer-events:none}
+.hero>*{position:relative;z-index:1}
+.page-bg{position:absolute;top:0;left:0;width:100%;height:100%;opacity:.1;z-index:0;pointer-events:none;overflow:hidden}
 .page-bg svg{width:100%;height:100%}
 nav,.hero,section,footer{position:relative;z-index:1}
 .badge{color:var(--accent);font-family:'Space Mono',monospace;margin-bottom:18px}
 h1{font-size:clamp(3rem,8vw,6rem);line-height:1}
 h1 span{color:var(--accent)}
 .hero p{max-width:650px;margin:24px 0;color:var(--muted);font-size:1.1rem}
-.btn{display:inline-block;background:var(--accent);color:#000;padding:14px 24px;text-decoration:none;font-weight:700;border-radius:4px}
+.btn{display:inline-block;background:var(--accent);color:#000;padding:14px 24px;text-decoration:none;font-weight:700;border-radius:4px;transition:transform .25s ease,box-shadow .25s ease}
+.btn:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(204,255,0,0.25)}
+.btn:active{transform:translateY(0)}
 section{max-width:1100px;margin:auto;padding:80px 24px}
+.reveal{opacity:0;transform:translateY(24px);transition:opacity .6s ease,transform .6s ease}
+.reveal.visible{opacity:1;transform:translateY(0)}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
-.card{border:1px solid #222;padding:24px;border-radius:8px;background:#0a0a0a}
+.card{border:1px solid #222;padding:24px;border-radius:8px;background:#0a0a0a;transition:transform .25s ease,border-color .25s ease,box-shadow .25s ease}
+.card:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 30px rgba(0,0,0,0.4)}
 footer{border-top:1px solid #222;padding:40px 24px;text-align:center;color:var(--muted)}
 footer .logo{justify-content:center;margin-bottom:8px}
 .email-link{color:var(--accent);text-decoration:none;font-weight:600}
@@ -240,7 +247,7 @@ footer .logo{justify-content:center;margin-bottom:8px}
 <p>θ తీటా Labs provides fast-turnaround 3D printing, prototypes, custom parts, and multicolor manufacturing. Built by engineers, focused on quality and speed.</p>
 <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">Get a Free Quote</a>
 </section>
-<section id="services">
+<section id="services" class="reveal">
 <h2>Services</h2><br>
 <div class="grid">
 <div class="card"><h3>Prototypes</h3><p>Functional engineering and product-development prints.</p></div>
@@ -249,16 +256,16 @@ footer .logo{justify-content:center;margin-bottom:8px}
 <div class="card"><h3>Models</h3><p>Architecture, presentation, and display models.</p></div>
 </div>
 </section>
-<section id="pricing">
+<section id="pricing" class="reveal">
 <h2>Pricing</h2><br>
 <div class="grid">
-<div class="card"><h3>$1–2 / gram</h3><p>Standard PLA printing.</p></div>
-<div class="card"><h3>$15 minimum</h3><p>Includes material and machine time.</p></div>
-<div class="card"><h3>+$5</h3><p>Multicolor upgrade.</p></div>
+<div class="card"><h3 id="price-rate">$1–2 / gram</h3><p>Standard PLA printing.</p></div>
+<div class="card"><h3 id="price-min">$15 minimum</h3><p>Includes material and machine time.</p></div>
+<div class="card"><h3 id="price-color">+$5</h3><p>Multicolor upgrade.</p></div>
 <div class="card"><h3>+25%</h3><p>Rush orders under 24 hours.</p></div>
 </div>
 </section>
-<section>
+<section class="reveal">
 <h2>Ready to print?</h2><br>
 <p>Email: <a class="email-link" href="mailto:robertattheta@gmail.com">robertattheta@gmail.com</a></p><br>
 <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">Request a Quote</a>
@@ -270,6 +277,16 @@ footer .logo{justify-content:center;margin-bottom:8px}
 <p><a class="email-link" href="mailto:robertattheta@gmail.com">robertattheta@gmail.com</a></p>
 </footer>
 <script>
+const observer=new IntersectionObserver((entries)=>{
+  entries.forEach(entry=>{
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:0.15});
+document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
+
 const states=['Theta','తీటా'];
 let i=0;
 const elTop=document.querySelector('.logo-text');
@@ -283,6 +300,19 @@ setInterval(()=>{
     });
   },400);
 },3000);
+
+try{
+  const tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';
+  const isIndia=tz.includes('Calcutta')||tz.includes('Kolkata')||tz.includes('Asia/Kolkata');
+  if(isIndia){
+    const rate=document.getElementById('price-rate');
+    const min=document.getElementById('price-min');
+    const color=document.getElementById('price-color');
+    if(rate) rate.textContent='₹6–8 / gram';
+    if(min) min.textContent='₹300 minimum';
+    if(color) color.textContent='+₹150';
+  }
+}catch(e){}
 </script>
 </body>
 </html>
