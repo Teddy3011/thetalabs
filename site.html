@@ -255,7 +255,10 @@ footer .logo{justify-content:center;margin-bottom:8px}
 </nav>
 <section class="hero">
 <div class="badge">// Tempe, AZ · Hyderabad, India · Bambu Lab A1 · Fast Turnaround</div>
-<h1>Your parts.<br><span>Printed fast.</span></h1>
+<div id="mesh-hero" style="position:relative;width:100%">
+<h1 id="mesh-hero-h1" style="margin:0">Your parts.<br><span>Printed fast.</span></h1>
+<canvas id="mesh-hero-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none"></canvas>
+</div>
 <p>θ తీటా Labs provides fast-turnaround 3D printing, prototypes, custom parts, and multicolor manufacturing. Built by engineers, focused on quality and speed.</p>
 <a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor" target="_blank" rel="noopener noreferrer">Get a Free Quote</a>
 </section>
@@ -387,6 +390,118 @@ try{
       ],{duration:D,easing:ease,fill:'forwards'}).onfinish=()=>p.remove();
     });
   });
+})();
+</script>
+<script>
+/* Mesh Text Hover — WebGL2 grid distortion over the hero heading */
+(function(){
+  const GRID_W=96, GRID_H=40, SPRING_K=0.08, DAMPING=0.9, DT=0.1, DRAG=1.8;
+  const wrapper=document.getElementById('mesh-hero');
+  const h1=document.getElementById('mesh-hero-h1');
+  const canvas=document.getElementById('mesh-hero-canvas');
+  if(!wrapper||!h1||!canvas) return;
+  const gl=canvas.getContext('webgl2',{alpha:true,premultipliedAlpha:true,antialias:true});
+  if(!gl) return; // fallback: plain h1 stays visible
+
+  const VERT=`#version 300 es
+  in vec2 aPos; in vec2 aUv; in vec2 aDisp; out vec2 vUv;
+  void main(){ gl_Position=vec4(aPos+aDisp,0.0,1.0); vUv=aUv; }`;
+  const FRAG=`#version 300 es
+  precision highp float; in vec2 vUv; out vec4 outColor; uniform sampler2D uTex;
+  void main(){ outColor=texture(uTex,vUv); }`;
+  function compile(t,s){const sh=gl.createShader(t);gl.shaderSource(sh,s);gl.compileShader(sh);
+    if(!gl.getShaderParameter(sh,gl.COMPILE_STATUS)){console.error(gl.getShaderInfoLog(sh));return null;}return sh;}
+  const vs=compile(gl.VERTEX_SHADER,VERT), fs=compile(gl.FRAGMENT_SHADER,FRAG);
+  if(!vs||!fs) return;
+  const program=gl.createProgram();gl.attachShader(program,vs);gl.attachShader(program,fs);gl.linkProgram(program);
+  if(!gl.getProgramParameter(program,gl.LINK_STATUS)){console.error(gl.getProgramInfoLog(program));return;}
+
+  const vertCount=(GRID_W+1)*(GRID_H+1);
+  const positions=new Float32Array(vertCount*2), uvs=new Float32Array(vertCount*2);
+  for(let y=0;y<=GRID_H;y++)for(let x=0;x<=GRID_W;x++){const i=y*(GRID_W+1)+x,u=x/GRID_W,v=y/GRID_H;
+    positions[i*2]=u*2-1;positions[i*2+1]=1-v*2;uvs[i*2]=u;uvs[i*2+1]=v;}
+  const indices=new Uint32Array(GRID_W*GRID_H*6);let idx=0;
+  for(let y=0;y<GRID_H;y++)for(let x=0;x<GRID_W;x++){const a=y*(GRID_W+1)+x,b=a+1,c=a+(GRID_W+1),d=c+1;
+    indices[idx++]=a;indices[idx++]=c;indices[idx++]=b;indices[idx++]=b;indices[idx++]=c;indices[idx++]=d;}
+  const disp=new Float32Array(vertCount*2), vel=new Float32Array(vertCount*2);
+
+  const aPos=gl.getAttribLocation(program,'aPos'), aUv=gl.getAttribLocation(program,'aUv'), aDisp=gl.getAttribLocation(program,'aDisp');
+  const uTex=gl.getUniformLocation(program,'uTex');
+  const vao=gl.createVertexArray();gl.bindVertexArray(vao);
+  function buf(data,loc,usage){const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,data,usage);gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);return b;}
+  buf(positions,aPos,gl.STATIC_DRAW); buf(uvs,aUv,gl.STATIC_DRAW);
+  const dispBuf=buf(disp,aDisp,gl.DYNAMIC_DRAW);
+  const idxBuf=gl.createBuffer();gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,idxBuf);gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,indices,gl.STATIC_DRAW);
+  const tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,tex);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+
+  const accent=getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()||'#ccff00';
+  const fg=getComputedStyle(document.documentElement).getPropertyValue('--fg').trim()||'#f5f5f0';
+
+  function rebuildTex(){
+    const cs=getComputedStyle(h1);
+    const dpr=window.devicePixelRatio||1;
+    const w=canvas.width, h=canvas.height;
+    const fontSize=parseFloat(cs.fontSize)*dpr;
+    const c2=document.createElement('canvas');c2.width=w;c2.height=h;
+    const ctx=c2.getContext('2d');ctx.clearRect(0,0,w,h);
+    ctx.textAlign='left';ctx.textBaseline='middle';
+    ctx.font=`${cs.fontWeight} ${fontSize}px ${cs.fontFamily}`;
+    const lineH=h/2;
+    ctx.fillStyle=fg; ctx.fillText('Your parts.', 0, lineH*0.5);
+    ctx.fillStyle=accent; ctx.fillText('Printed fast.', 0, lineH*1.5);
+    gl.bindTexture(gl.TEXTURE_2D,tex);
+    gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL,true);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c2);
+  }
+  function resize(){
+    const dpr=window.devicePixelRatio||1;
+    const rect=h1.getBoundingClientRect();
+    const w=Math.max(2,Math.round(rect.width*dpr)), h=Math.max(2,Math.round(rect.height*dpr));
+    if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;gl.viewport(0,0,w,h);}
+    rebuildTex();
+  }
+  const ro=new ResizeObserver(resize);ro.observe(wrapper);
+  // reveal canvas, hide the plain text (kept for a11y/SEO + layout)
+  canvas.style.display='block';
+  h1.style.color='transparent';
+  const sp=h1.querySelector('span'); if(sp) sp.style.color='transparent';
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(resize);
+  resize();
+
+  const cur={x:99,y:99,px:99,py:99,vx:0,vy:0,inside:false};
+  wrapper.addEventListener('pointermove',e=>{
+    const rect=canvas.getBoundingClientRect();
+    const x=((e.clientX-rect.left)/rect.width)*2-1, y=1-((e.clientY-rect.top)/rect.height)*2;
+    if(!cur.inside){cur.px=x;cur.py=y;cur.inside=true;}
+    cur.x=x;cur.y=y;
+  });
+  wrapper.addEventListener('pointerleave',()=>{cur.inside=false;cur.x=99;cur.y=99;cur.vx=0;cur.vy=0;});
+
+  function tick(){
+    cur.vx=cur.x-cur.px;cur.vy=cur.y-cur.py;
+    if(Math.hypot(cur.vx,cur.vy)>0.3){cur.vx=0;cur.vy=0;}
+    cur.px=cur.x;cur.py=cur.y;
+    for(let i=0;i<vertCount;i++){const i2=i*2;
+      const px=positions[i2],py=positions[i2+1],dx=disp[i2],dy=disp[i2+1];
+      const cd=Math.hypot(cur.x-(px+dx),cur.y-(py+dy));
+      const prox=Math.max(0,1/(1+cd/0.05)-0.1);
+      let vx=vel[i2]+cur.vx*DRAG*prox, vy=vel[i2+1]+cur.vy*DRAG*prox;
+      vx-=dx*SPRING_K;vy-=dy*SPRING_K;vx*=DAMPING;vy*=DAMPING;
+      vel[i2]=vx;vel[i2+1]=vy;
+      let ndx=dx+vx*DT, ndy=dy+vy*DT;
+      ndx=Math.max(-1,Math.min(1,ndx));ndy=Math.max(-1,Math.min(1,ndy));
+      disp[i2]=ndx;disp[i2+1]=ndy;
+    }
+    gl.bindBuffer(gl.ARRAY_BUFFER,dispBuf);gl.bufferSubData(gl.ARRAY_BUFFER,0,disp);
+    gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.useProgram(program);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,tex);gl.uniform1i(uTex,0);
+    gl.enable(gl.BLEND);gl.blendFunc(gl.ONE,gl.ONE_MINUS_SRC_ALPHA);
+    gl.bindVertexArray(vao);gl.drawElements(gl.TRIANGLES,indices.length,gl.UNSIGNED_INT,0);
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
 })();
 </script>
 </body>
