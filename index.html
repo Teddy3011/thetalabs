@@ -17,7 +17,16 @@
 </helmet>
 <div style="background:#0a0a0a;">
   <div ref="{{ containerRef }}" style="position:relative; height:{{ scrollHeight }};">
-    <div style="position:sticky; top:0; left:0; width:100%; height:100vh; overflow:hidden; background:#0a0a0a; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; opacity:{{ introOpacity }}; transition:opacity 0.9s ease;">
+    <div ref="{{ sceneRef }}" style="position:sticky; top:0; left:0; width:100%; height:100vh; overflow:hidden; background:#0a0a0a; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; opacity:{{ introOpacity }}; transition:opacity 0.9s ease; cursor:none;">
+
+      <!-- custom cursor: arrow + trailing name pill -->
+      <div ref="{{ fxRef }}" style="position:absolute; inset:0; z-index:11; pointer-events:none; overflow:visible;"></div>
+      <div ref="{{ cursorLabelRef }}" style="position:absolute; top:0; left:0; z-index:12; pointer-events:none; opacity:0; transform:translate(-9999px,-9999px); transition:opacity 140ms ease; will-change:transform,opacity; background:#FFFFFF; color:#000000; border-radius:999px; padding:6px 11px; font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:13px; font-weight:600; line-height:1.1; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.18),0 1px 2px rgba(0,0,0,0.1); user-select:none; transform-origin:0% 50%;">Theta Labs</div>
+      <div ref="{{ cursorArrowRef }}" style="position:absolute; top:0; left:0; z-index:13; pointer-events:none; opacity:0; transform:translate(-9999px,-9999px); transition:opacity 140ms ease; will-change:transform,opacity; transform-origin:0% 0%;">
+        <svg width="31" height="31" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; overflow:visible;">
+          <path d="M5 3 L23 14 L14 16 L11 24 Z" fill="#FFFFFF" stroke="rgba(0,0,0,0.18)" stroke-width="0.6" stroke-linejoin="round"></path>
+        </svg>
+      </div>
 
       <!-- printer machine group (real reference photo, de-branded) -->
       <div style="position:absolute; inset:0; z-index:2; opacity:{{ frameOpacity }}; transition:opacity 0.6s ease; transform:scale({{ sceneScale }}); transform-origin:50% 55%;">
@@ -76,15 +85,111 @@
 <script type="text/x-dc" data-dc-script data-props="{&quot;sceneScale&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.1,&quot;min&quot;:0.7,&quot;max&quot;:1.4,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Printer scene&quot;},&quot;frameFinish&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;graphite&quot;,&quot;options&quot;:[&quot;steel&quot;,&quot;graphite&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Printer scene&quot;},&quot;printDuration&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:425,&quot;min&quot;:250,&quot;max&quot;:700,&quot;step&quot;:25,&quot;unit&quot;:&quot;vh&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;showHero&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;hintBottom&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:55,&quot;min&quot;:20,&quot;max&quot;:500,&quot;step&quot;:5,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scroll hint&quot;},&quot;hintX&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:25,&quot;min&quot;:-400,&quot;max&quot;:400,&quot;step&quot;:5,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scroll hint&quot;}}">
 class Component extends DCLogic {
   containerRef = React.createRef();
+  sceneRef = React.createRef();
+  cursorArrowRef = React.createRef();
+  cursorLabelRef = React.createRef();
+  fxRef = React.createRef();
   state = { progress: 0, completed: false, revealed: false };
 
   componentDidMount() {
     this._onScroll = () => this.handleScroll();
     window.addEventListener('scroll', this._onScroll, { passive: true });
     this.handleScroll();
+    this.initCursor();
   }
   componentWillUnmount() {
     window.removeEventListener('scroll', this._onScroll);
+    if (this._raf) cancelAnimationFrame(this._raf);
+    const s = this.sceneRef.current;
+    if (s && this._cursorHandlers) {
+      s.removeEventListener('mousemove', this._cursorHandlers.move);
+      s.removeEventListener('mouseenter', this._cursorHandlers.enter);
+      s.removeEventListener('mouseleave', this._cursorHandlers.leave);
+      s.removeEventListener('mousedown', this._cursorHandlers.down);
+      s.removeEventListener('mouseup', this._cursorHandlers.up);
+      s.removeEventListener('click', this._cursorHandlers.click);
+    }
+  }
+
+  initCursor() {
+    const scene = this.sceneRef.current;
+    const arrow = this.cursorArrowRef.current;
+    const label = this.cursorLabelRef.current;
+    if (!scene || !arrow || !label) return;
+    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
+
+    const c = { mx: -9999, my: -9999, ax: -9999, ay: -9999, lx: -9999, ly: -9999,
+               scale: 1, targetScale: 1, tilt: 0, targetTilt: 0, inside: false, lastX: 0, lastT: 0 };
+    this._cursor = c;
+    const labelOffX = 28, labelOffY = 12;
+
+    const move = (e) => {
+      const r = scene.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const now = performance.now();
+      const dt = Math.max(1, now - c.lastT);
+      const vx = (x - c.lastX) / dt * 1000;
+      c.lastX = x; c.lastT = now;
+      c.mx = x; c.my = y;
+      const sign = vx === 0 ? 0 : (vx > 0 ? 1 : -1);
+      c.targetTilt = sign * Math.min(1, Math.abs(vx) / 1500) * 25;
+    };
+    const enter = () => { c.inside = true; arrow.style.opacity = '1'; label.style.opacity = '1'; };
+    const leave = () => { c.inside = false; arrow.style.opacity = '0'; label.style.opacity = '0'; c.targetTilt = 0; };
+    const down = () => { c.targetScale = 0.92; };
+    const up = () => { c.targetScale = 1; };
+
+    scene.addEventListener('mousemove', move);
+    scene.addEventListener('mouseenter', enter);
+    scene.addEventListener('mouseleave', leave);
+    scene.addEventListener('mousedown', down);
+    scene.addEventListener('mouseup', up);
+    this._cursorHandlers = { move, enter, leave, down, up };
+
+    // click burst (sniper): crosshair ticks + radial particles
+    const fx = this.fxRef.current;
+    const click = (e) => {
+      if (!fx) return;
+      const r = scene.getBoundingClientRect();
+      const x = e.clientX - r.left, y = e.clientY - r.top;
+      const C = 90, SW = 2, D = 320, accent = '#D6FF3F', ease = 'cubic-bezier(.2,.8,.2,1)';
+      [0,90,180,270].forEach(deg => {
+        const len = C*0.2, t = document.createElement('div');
+        t.style.cssText = `position:absolute;left:${x}px;top:${y}px;height:${SW}px;width:${len}px;background:${accent};transform-origin:0 50%;border-radius:1px`;
+        fx.appendChild(t);
+        t.animate([
+          {transform:`rotate(${-deg}deg) translateX(5px)`,opacity:1},
+          {transform:`rotate(${-deg}deg) translateX(${5+len}px)`,opacity:1,offset:0.7},
+          {transform:`rotate(${-deg}deg) translateX(${5+len}px) scaleX(0.15)`,opacity:0}
+        ], {duration:D,easing:ease,fill:'forwards'}).onfinish = () => t.remove();
+      });
+      [Math.PI/3,2*Math.PI/3,4*Math.PI/3,5*Math.PI/3,Math.PI/6,5*Math.PI/6,7*Math.PI/6,11*Math.PI/6].forEach(a => {
+        const p = document.createElement('div');
+        p.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${SW}px;height:${SW}px;background:${accent};border-radius:1px;transform:translate(-50%,-50%)`;
+        fx.appendChild(p);
+        const dx = Math.cos(a)*C*0.4, dy = -Math.sin(a)*C*0.4;
+        p.animate([
+          {transform:`translate(-50%,-50%) translate(0,0) scale(1)`,opacity:1},
+          {transform:`translate(-50%,-50%) translate(${dx}px,${dy}px) scale(1)`,opacity:1,offset:0.6},
+          {transform:`translate(-50%,-50%) translate(${dx}px,${dy}px) scale(0)`,opacity:0}
+        ], {duration:D,easing:ease,fill:'forwards'}).onfinish = () => p.remove();
+      });
+    };
+    scene.addEventListener('click', click);
+    this._cursorHandlers.click = click;
+
+    const tick = () => {
+      c.ax += (c.mx - c.ax) * 0.35;
+      c.ay += (c.my - c.ay) * 0.35;
+      c.lx += (c.mx - c.lx) * 0.18;
+      c.ly += (c.my - c.ly) * 0.18;
+      c.scale += (c.targetScale - c.scale) * 0.25;
+      c.tilt += (c.targetTilt - c.tilt) * 0.15;
+      arrow.style.transform = `translate(${c.ax}px, ${c.ay}px) scale(${c.scale})`;
+      label.style.transform = `translate(${c.lx + labelOffX}px, ${c.ly + labelOffY}px) rotate(${c.tilt}deg) scale(${c.scale})`;
+      this._raf = requestAnimationFrame(tick);
+    };
+    this._raf = requestAnimationFrame(tick);
   }
 
   handleScroll() {
@@ -146,6 +251,10 @@ class Component extends DCLogic {
       sceneScale,
       frameFilter, toolheadLeft, nozzleGlowLeft, toolheadTop, nozzleGlowTop, railTop,
       containerRef: this.containerRef,
+      sceneRef: this.sceneRef,
+      cursorArrowRef: this.cursorArrowRef,
+      cursorLabelRef: this.cursorLabelRef,
+      fxRef: this.fxRef,
       progressPct: pct + '%',
       statusText: completed ? 'READY' : `PRINTING · ${pct}%`,
       layerText: completed ? '' : `LAYER ${Math.round(progress * 316)}/316`,
