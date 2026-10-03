@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://thetalab3d.shop/sitemap.xml

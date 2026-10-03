@@ -1,278 +1,436 @@
 <!DOCTYPE html>
-<html>
+<!--
+  Theta Labs 3D — static site for GitHub Pages (no build step).
+  Business name, email, quote-form URL, prices, etc. are recorded in site.config.json.
+  Change them with:  node scripts/set-config.mjs <key> "<new value>"   (see README.md)
+  Comments marked OWNER-INPUT flag copy that still needs owner confirmation.
+-->
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script src="./support.js"></script>
-</head>
-<body>
-<x-dc>
-<helmet>
-<style>
-  @keyframes fadeUp { from { opacity:0; transform:translateY(8px);} to { opacity:1; transform:translateY(0);} }
-  @keyframes bob { 0%,100% { transform:translateY(0);} 50% { transform:translateY(6px);} }
-  @keyframes bobCenter { 0%,100% { transform:translate(-50%,-50%);} 50% { transform:translate(-50%,calc(-50% + 6px));} }
-  @keyframes glowPulse { 0%,100% { opacity:0.6; transform:scale(1);} 50% { opacity:1; transform:scale(1.4);} }
-</style>
-</helmet>
-<div style="background:#0a0a0a;">
-  <div ref="{{ containerRef }}" style="position:relative; height:{{ scrollHeight }};">
-    <div ref="{{ sceneRef }}" style="position:sticky; top:0; left:0; width:100%; height:100vh; overflow:hidden; background:#0a0a0a; font-family:'Helvetica Neue',Helvetica,Arial,sans-serif; opacity:{{ introOpacity }}; transition:opacity 0.9s ease; cursor:none;">
+<title>Theta Labs 3D | Fast Local 3D Printing in Tempe</title>
+<meta name="description" content="Engineer-led 3D printing for prototypes, custom parts, models, and multicolor prints. Local quoting, pickup, and delivery in Tempe, Arizona.">
+<link rel="canonical" href="https://thetalab3d.shop/">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
 
-      <!-- custom cursor: arrow + trailing name pill -->
-      <div ref="{{ fxRef }}" style="position:absolute; inset:0; z-index:11; pointer-events:none; overflow:visible;"></div>
-      <div ref="{{ cursorLabelRef }}" style="position:absolute; top:0; left:0; z-index:12; pointer-events:none; opacity:0; transform:translate(-9999px,-9999px); transition:opacity 140ms ease; will-change:transform,opacity; background:#FFFFFF; color:#000000; border-radius:999px; padding:6px 11px; font-family:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; font-size:13px; font-weight:600; line-height:1.1; white-space:nowrap; box-shadow:0 4px 12px rgba(0,0,0,0.18),0 1px 2px rgba(0,0,0,0.1); user-select:none; transform-origin:0% 50%;">Theta Labs</div>
-      <div ref="{{ cursorArrowRef }}" style="position:absolute; top:0; left:0; z-index:13; pointer-events:none; opacity:0; transform:translate(-9999px,-9999px); transition:opacity 140ms ease; will-change:transform,opacity; transform-origin:0% 0%;">
-        <svg width="31" height="31" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block; overflow:visible;">
-          <path d="M5 3 L23 14 L14 16 L11 24 Z" fill="#FFFFFF" stroke="rgba(0,0,0,0.18)" stroke-width="0.6" stroke-linejoin="round"></path>
-        </svg>
-      </div>
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Theta Labs 3D">
+<meta property="og:title" content="Theta Labs 3D | Your parts. Printed fast.">
+<meta property="og:description" content="Engineer-led 3D printing for prototypes, custom parts, models, and multicolor prints. Local quoting, pickup, and delivery in Tempe, Arizona.">
+<meta property="og:url" content="https://thetalab3d.shop/">
+<meta property="og:image" content="https://thetalab3d.shop/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Theta Labs 3D logo with the headline Your parts. Printed fast.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Theta Labs 3D | Your parts. Printed fast.">
+<meta name="twitter:description" content="Engineer-led 3D printing for prototypes, custom parts, models, and multicolor prints in Tempe, Arizona.">
+<meta name="twitter:image" content="https://thetalab3d.shop/assets/og-image.png">
+<meta name="twitter:image:alt" content="Theta Labs 3D logo with the headline Your parts. Printed fast.">
 
-      <!-- printer machine group (real reference photo, de-branded) -->
-      <div style="position:absolute; inset:0; z-index:2; opacity:{{ frameOpacity }}; transition:opacity 0.6s ease; transform:scale({{ sceneScale }}); transform-origin:50% 55%;">
-        <img src="./frame-only.png" alt="" style="position:absolute; left:calc(50vw - 24vmin); top:calc(50vh - 22.42vmin); width:48vmin; height:44.84vmin; filter:{{ frameFilter }};"></img>
-        <!-- top rail bar, bobs with the toolhead and overlaps the static posts to hide any seam -->
-        <img src="./rail-bar.png" alt="" style="position:absolute; left:calc(50vw - 17vmin); top:{{ railTop }}; width:34.27vmin; height:8.14vmin; filter:{{ frameFilter }};"></img>
-        <!-- neon filament spool hanging beside the control box -->
-        <img src="./filament-spool.png" alt="" style="position:absolute; left:calc(50vw + 15.8vmin); top:calc(50vh - 12vmin); width:4.5vmin; height:15.6vmin; object-fit:contain;"></img>
-        <!-- animated toolhead sprite -->
-        <img src="./toolhead-sprite.png" alt="" style="position:absolute; left:{{ toolheadLeft }}; top:{{ toolheadTop }}; width:6.78vmin; height:15.14vmin;"></img>
-        <div style="position:absolute; left:{{ nozzleGlowLeft }}; top:{{ nozzleGlowTop }}; width:0.5vmin; height:0.5vmin; border-radius:50%; background:#D6FF3F; box-shadow:0 0 0.8vmin 0.25vmin rgba(214,255,63,0.7); animation:glowPulse 1.4s ease-in-out infinite;"></div>
-      </div>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 
-      <!-- printed logo -->
-      <div style="position:absolute; left:{{ logoLeft }}; top:{{ logoTop }}; width:{{ logoWidth }}; height:{{ logoHeight }}; transition:left 1s cubic-bezier(.4,0,.2,1), top 1s cubic-bezier(.4,0,.2,1), width 1s cubic-bezier(.4,0,.2,1), height 1s cubic-bezier(.4,0,.2,1); z-index:3;">
-        <div style="position:absolute; inset:0; overflow:hidden;">
-          <div style="position:absolute; inset:0; clip-path:{{ logoClip }};">
-            <img src="./theta-logo.png" alt="" style="width:100%; height:100%; display:block; object-fit:contain;"></img>
-          </div>
-        </div>
-      </div>
-
-      <!-- nav wordmark -->
-      <div style="position:absolute; top:88px; left:50%; transform:translateX(-50%); opacity:{{ statusOpacity }}; transition:opacity 0.4s ease; color:#8a8a8a; font-size:13px; letter-spacing:0.18em; text-transform:uppercase; text-align:center; z-index:5;">
-        <div style="color:#D6FF3F; font-size:12px; margin-bottom:6px;">{{ statusText }}</div>
-        <div style="width:220px; height:2px; background:rgba(255,255,255,0.12); border-radius:2px; overflow:hidden;">
-          <div style="height:100%; width:{{ progressPct }}; background:#D6FF3F;"></div>
-        </div>
-      </div>
-
-      <!-- scroll hint -->
-      <div style="position:absolute; bottom:{{ hintBottom }}; left:50%; transform:translateX({{ hintShift }}); opacity:{{ hintOpacity }}; transition:opacity 0.4s ease; color:#5a5a5a; font-size:13px; letter-spacing:0.3em; text-transform:uppercase; text-align:center; z-index:5;">
-        <span style="display:inline-block; animation:bob 1.8s ease-in-out infinite;">Scroll to print ↓</span>
-      </div>
-
-      <!-- layer progress -->
-      <div style="position:absolute; top:calc(50vh + 24vmin); left:50%; transform:translateX(-50%); opacity:{{ statusOpacity }}; transition:opacity 0.4s ease; color:#8a8a8a; font-size:12px; letter-spacing:0.18em; text-transform:uppercase; text-align:center; z-index:5;">{{ layerText }}</div>
-
-      <!-- opening hero, fades/lifts away as the print begins -->
-      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; opacity:{{ heroOpacity }}; transform:{{ heroTransform }}; transition:opacity 0.5s ease, transform 0.5s ease; pointer-events:none; z-index:6;">
-        <div style="text-align:center; max-width:80vw;">
-          <div style="color:#5a5a5a; font-size:13px; letter-spacing:0.3em; text-transform:uppercase; margin-bottom:18px; opacity:0; animation:fadeUp 0.8s ease 0.15s both;">Theta Lab 3D</div>
-          <div style="color:#f2f2f2; font-size:clamp(32px,6vw,72px); font-weight:600; line-height:1.05; letter-spacing:-0.01em; opacity:0; animation:fadeUp 0.9s ease 0.35s both;">A Bright Start<br/>To Every Idea</div>
-          <div style="color:#8a8a8a; font-size:15px; letter-spacing:0.05em; margin-top:20px; opacity:0; animation:fadeUp 0.8s ease 0.6s both;">Watch the A1 bring our mark to life</div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <!-- the real site, revealed once the print completes -->
-  <iframe src="./site.html" title="Theta Labs" style="position:fixed; inset:0; width:100vw; height:100vh; border:0; background:#0a0a0a; opacity:{{ siteOpacity }}; pointer-events:{{ sitePointer }}; transition:opacity 0.9s ease; z-index:20;"></iframe>
-</div>
-
-</x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;sceneScale&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:1.1,&quot;min&quot;:0.7,&quot;max&quot;:1.4,&quot;step&quot;:0.05,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Printer scene&quot;},&quot;frameFinish&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;graphite&quot;,&quot;options&quot;:[&quot;steel&quot;,&quot;graphite&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Printer scene&quot;},&quot;printDuration&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:425,&quot;min&quot;:250,&quot;max&quot;:700,&quot;step&quot;:25,&quot;unit&quot;:&quot;vh&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;showHero&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;hintBottom&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:55,&quot;min&quot;:20,&quot;max&quot;:500,&quot;step&quot;:5,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scroll hint&quot;},&quot;hintX&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:25,&quot;min&quot;:-400,&quot;max&quot;:400,&quot;step&quot;:5,&quot;unit&quot;:&quot;px&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Scroll hint&quot;}}">
-class Component extends DCLogic {
-  containerRef = React.createRef();
-  sceneRef = React.createRef();
-  cursorArrowRef = React.createRef();
-  cursorLabelRef = React.createRef();
-  fxRef = React.createRef();
-  state = { progress: 0, completed: false, revealed: false };
-
-  componentDidMount() {
-    this._onScroll = () => this.handleScroll();
-    window.addEventListener('scroll', this._onScroll, { passive: true });
-    this.handleScroll();
-    this.initCursor();
-  }
-  componentWillUnmount() {
-    window.removeEventListener('scroll', this._onScroll);
-    if (this._raf) cancelAnimationFrame(this._raf);
-    const s = this.sceneRef.current;
-    if (s && this._cursorHandlers) {
-      s.removeEventListener('mousemove', this._cursorHandlers.move);
-      s.removeEventListener('mouseenter', this._cursorHandlers.enter);
-      s.removeEventListener('mouseleave', this._cursorHandlers.leave);
-      s.removeEventListener('mousedown', this._cursorHandlers.down);
-      s.removeEventListener('mouseup', this._cursorHandlers.up);
-      s.removeEventListener('click', this._cursorHandlers.click);
+<link rel="preload" href="assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<script>
+// Runs before first paint: .js enables the enhanced UI, .motion enables animation (off for reduced motion),
+// .intro shows the first-visit intro. Add ?motion to the URL to force motion on a machine with reduced motion on.
+(() => {
+  const d = document.documentElement;
+  d.classList.add('js');
+  try {
+    const force = new URLSearchParams(location.search).has('motion');
+    if (!force && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    d.classList.add('motion');
+    if (force || (!location.hash && !sessionStorage.getItem('introSeen'))) {
+      sessionStorage.setItem('introSeen', '1');
+      d.classList.add('intro', 'intro-played');
     }
-  }
+  } catch (e) {}
+})();
+</script>
+<link rel="preload" as="image" href="assets/printer-frame.webp" type="image/webp">
+<script src="assets/script.js" defer></script>
 
-  initCursor() {
-    const scene = this.sceneRef.current;
-    const arrow = this.cursorArrowRef.current;
-    const label = this.cursorLabelRef.current;
-    if (!scene || !arrow || !label) return;
-    if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
-
-    const c = { mx: -9999, my: -9999, ax: -9999, ay: -9999, lx: -9999, ly: -9999,
-               scale: 1, targetScale: 1, tilt: 0, targetTilt: 0, inside: false, lastX: 0, lastT: 0 };
-    this._cursor = c;
-    const labelOffX = 28, labelOffY = 12;
-
-    const move = (e) => {
-      const r = scene.getBoundingClientRect();
-      const x = e.clientX - r.left, y = e.clientY - r.top;
-      const now = performance.now();
-      const dt = Math.max(1, now - c.lastT);
-      const vx = (x - c.lastX) / dt * 1000;
-      c.lastX = x; c.lastT = now;
-      c.mx = x; c.my = y;
-      const sign = vx === 0 ? 0 : (vx > 0 ? 1 : -1);
-      c.targetTilt = sign * Math.min(1, Math.abs(vx) / 1500) * 25;
-    };
-    const enter = () => { c.inside = true; arrow.style.opacity = '1'; label.style.opacity = '1'; };
-    const leave = () => { c.inside = false; arrow.style.opacity = '0'; label.style.opacity = '0'; c.targetTilt = 0; };
-    const down = () => { c.targetScale = 0.92; };
-    const up = () => { c.targetScale = 1; };
-
-    scene.addEventListener('mousemove', move);
-    scene.addEventListener('mouseenter', enter);
-    scene.addEventListener('mouseleave', leave);
-    scene.addEventListener('mousedown', down);
-    scene.addEventListener('mouseup', up);
-    this._cursorHandlers = { move, enter, leave, down, up };
-
-    // click burst (sniper): crosshair ticks + radial particles
-    const fx = this.fxRef.current;
-    const click = (e) => {
-      if (!fx) return;
-      const r = scene.getBoundingClientRect();
-      const x = e.clientX - r.left, y = e.clientY - r.top;
-      const C = 90, SW = 2, D = 320, accent = '#D6FF3F', ease = 'cubic-bezier(.2,.8,.2,1)';
-      [0,90,180,270].forEach(deg => {
-        const len = C*0.2, t = document.createElement('div');
-        t.style.cssText = `position:absolute;left:${x}px;top:${y}px;height:${SW}px;width:${len}px;background:${accent};transform-origin:0 50%;border-radius:1px`;
-        fx.appendChild(t);
-        t.animate([
-          {transform:`rotate(${-deg}deg) translateX(5px)`,opacity:1},
-          {transform:`rotate(${-deg}deg) translateX(${5+len}px)`,opacity:1,offset:0.7},
-          {transform:`rotate(${-deg}deg) translateX(${5+len}px) scaleX(0.15)`,opacity:0}
-        ], {duration:D,easing:ease,fill:'forwards'}).onfinish = () => t.remove();
-      });
-      [Math.PI/3,2*Math.PI/3,4*Math.PI/3,5*Math.PI/3,Math.PI/6,5*Math.PI/6,7*Math.PI/6,11*Math.PI/6].forEach(a => {
-        const p = document.createElement('div');
-        p.style.cssText = `position:absolute;left:${x}px;top:${y}px;width:${SW}px;height:${SW}px;background:${accent};border-radius:1px;transform:translate(-50%,-50%)`;
-        fx.appendChild(p);
-        const dx = Math.cos(a)*C*0.4, dy = -Math.sin(a)*C*0.4;
-        p.animate([
-          {transform:`translate(-50%,-50%) translate(0,0) scale(1)`,opacity:1},
-          {transform:`translate(-50%,-50%) translate(${dx}px,${dy}px) scale(1)`,opacity:1,offset:0.6},
-          {transform:`translate(-50%,-50%) translate(${dx}px,${dy}px) scale(0)`,opacity:0}
-        ], {duration:D,easing:ease,fill:'forwards'}).onfinish = () => p.remove();
-      });
-    };
-    scene.addEventListener('click', click);
-    this._cursorHandlers.click = click;
-
-    const tick = () => {
-      c.ax += (c.mx - c.ax) * 0.35;
-      c.ay += (c.my - c.ay) * 0.35;
-      c.lx += (c.mx - c.lx) * 0.18;
-      c.ly += (c.my - c.ly) * 0.18;
-      c.scale += (c.targetScale - c.scale) * 0.25;
-      c.tilt += (c.targetTilt - c.tilt) * 0.15;
-      arrow.style.transform = `translate(${c.ax}px, ${c.ay}px) scale(${c.scale})`;
-      label.style.transform = `translate(${c.lx + labelOffX}px, ${c.ly + labelOffY}px) rotate(${c.tilt}deg) scale(${c.scale})`;
-      this._raf = requestAnimationFrame(tick);
-    };
-    this._raf = requestAnimationFrame(tick);
-  }
-
-  handleScroll() {
-    const el = this.containerRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const scrollable = rect.height - window.innerHeight;
-    let p = scrollable > 0 ? (-rect.top) / scrollable : 0;
-    p = Math.min(1, Math.max(0, p));
-    if (!this.state.completed) this.setState({ progress: p });
-    if (p >= 0.985 && !this.state.completed && !this._completing) {
-      this._completing = true;
-      setTimeout(() => this.setState({ completed: true }), 450);
-      // let the printed logo settle into the corner, then reveal the site
-      setTimeout(() => this.setState({ revealed: true }), 1500);
-    }
-  }
-
-  renderVals() {
-    const progress = this.state.progress;
-    const completed = this.state.completed;
-    const revealed = this.state.revealed;
-    const pct = Math.round(progress * 100);
-
-    const logoLeft = completed ? '24px' : 'calc(50vw - 7.15vmin)';
-    const logoTop = completed ? '18px' : 'calc(50vh - 5.02vmin)';
-    const logoWidth = completed ? '27px' : '11.04vmin';
-    const logoHeight = completed ? '43px' : '17.58vmin';
-
-    const showHero = this.props.showHero ?? true;
-    const heroFade = Math.min(1, progress / 0.14);
-    const heroOpacity = (completed || !showHero) ? 0 : 1 - heroFade;
-    const heroTransform = `translateY(${-heroFade * 34}px) scale(${1 - heroFade * 0.06})`;
-    const sceneReveal = showHero ? heroFade : 1;
-
-    const wave = (progress * 10) % 2;
-    const xOff = wave <= 1 ? wave : 2 - wave;
-    const toolheadXvmin = (xOff - 0.5) * 6;
-    const toolheadLeft = `calc(50vw - ${5.24 - toolheadXvmin}vmin)`;
-    const nozzleGlowLeft = `calc(50vw - ${1.85 - toolheadXvmin}vmin)`;
-
-    const zWave = (progress * 14) % 2;
-    const zOff = zWave <= 1 ? zWave : 2 - zWave;
-    const toolheadZvmin = (zOff - 0.5) * 1.6;
-    const toolheadTop = `calc(50vh - ${19.71 - toolheadZvmin}vmin)`;
-    const nozzleGlowTop = `calc(50vh - ${4.88 - toolheadZvmin}vmin)`;
-    // rail bar is fixed to the frame posts (only the toolhead moves in Z) — keeping it static avoids a seam/gap against the frame image
-    const railTop = `calc(50vh - 17.9vmin)`;
-
-    const sceneScale = Number(this.props.sceneScale) || 1;
-    const duration = this.props.printDuration ?? 400;
-    const finish = this.props.frameFinish ?? 'steel';
-    const frameFilter = finish === 'graphite' ? 'brightness(0.6) contrast(1.15)' : 'none';
-
-    return {
-      heroOpacity,
-      heroTransform,
-      scrollHeight: `${duration}vh`,
-      sceneScale,
-      frameFilter, toolheadLeft, nozzleGlowLeft, toolheadTop, nozzleGlowTop, railTop,
-      containerRef: this.containerRef,
-      sceneRef: this.sceneRef,
-      cursorArrowRef: this.cursorArrowRef,
-      cursorLabelRef: this.cursorLabelRef,
-      fxRef: this.fxRef,
-      progressPct: pct + '%',
-      statusText: completed ? 'READY' : `PRINTING · ${pct}%`,
-      layerText: completed ? '' : `LAYER ${Math.round(progress * 316)}/316`,
-      statusOpacity: completed ? 0 : 1,
-      hintOpacity: (progress < 0.04 && !completed) ? 1 : 0,
-      hintBottom: (Number(this.props.hintBottom) || 80) + 'px',
-      hintShift: `calc(-50% + ${Number(this.props.hintX) || 0}px)`,
-      frameOpacity: completed ? 0 : sceneReveal,
-      navBarOpacity: completed ? 1 : 0,
-      wordmarkOpacity: completed ? 1 : 0,
-      logoClip: `inset(${(1 - progress) * 100}% 0 0 0)`,
-      logoLeft, logoTop, logoWidth, logoHeight,
-      introOpacity: revealed ? 0 : 1,
-      siteOpacity: revealed ? 1 : 0,
-      sitePointer: revealed ? 'auto' : 'none'
-    };
-  }
+<!-- OWNER-INPUT: add "founder": { "@type": "Person", "name": "..." } once the founder's public name is confirmed. -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ProfessionalService",
+  "name": "Theta Labs 3D",
+  "url": "https://thetalab3d.shop/",
+  "email": "info@thetalab3d.shop",
+  "logo": "https://thetalab3d.shop/favicon-512.png",
+  "image": "https://thetalab3d.shop/assets/og-image.png",
+  "description": "Engineer-led 3D printing for prototypes, custom parts, models, and multicolor prints. Local quoting, pickup, and delivery in Tempe, Arizona.",
+  "slogan": "From dorm room designs to engineered reality.",
+  "areaServed": [
+    { "@type": "City", "name": "Tempe, Arizona, United States" },
+    { "@type": "City", "name": "Phoenix, Arizona, United States" }
+  ]
 }
 </script>
+</head>
+<body>
+<!-- First-visit intro: the original printer sequence, ~3 s and time-based. Hidden unless the <head> script adds html.intro. -->
+<div class="intro-overlay" id="intro">
+  <button class="intro-skip" type="button">Skip intro</button>
+  <div class="intro-bg"></div>
+  <div class="intro-copy" aria-hidden="true">
+    <p class="intro-kicker">Theta Labs 3D</p>
+    <p class="intro-title">A Bright Start<br>To Every Idea</p>
+    <p class="intro-sub">Watch the A1 bring our mark to life</p>
+  </div>
+  <div class="intro-status" aria-hidden="true"><span class="intro-status-text">Printing · 0%</span><span class="p-bar"><span></span></span></div>
+  <div class="intro-printer" aria-hidden="true">
+    <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747">
+    <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143">
+    <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277">
+    <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+    <div class="p-head">
+      <img src="assets/printer-toolhead.webp" alt="" width="120" height="268">
+      <span class="p-glow"></span>
+    </div>
+  </div>
+  <p class="intro-layer" aria-hidden="true">Layer 0/316</p>
+</div>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#top" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="#services">Services</a></li>
+        <li><a href="#process">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-extra">
+        <a class="btn" href="#contact">Request a Quote</a>
+        <a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a>
+      </div>
+    </nav>
+    <a class="btn btn-sm header-cta" href="#contact"><span class="cta-long">Request a </span>Quote</a>
+    <!-- Staggered off-canvas menu (JS only). Without JS the nav above stays a plain link list. -->
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+      <span class="menu-toggle-text" aria-hidden="true"><span class="menu-toggle-lines"><span>Menu</span></span></span>
+      <span class="menu-icon" aria-hidden="true"></span>
+    </button>
+    <div class="menu-layers" aria-hidden="true"><span></span><span></span></div>
+  </div>
+  <div class="scroll-progress" aria-hidden="true"></div>
+</header>
+
+<main id="main">
+  <section class="hero" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero-inner">
+      <div class="hero-copy">
+        <p class="eyebrow">Founder-operated in Tempe, Arizona</p>
+        <h1 id="hero-title">Your parts.<br><span class="accent">Printed fast.</span></h1>
+        <p class="lead">Turn a design file or rough idea into a physical part with local, engineer-led 3D printing for prototypes, custom components, models, and multicolor builds.</p>
+        <div class="cta-row">
+          <a class="btn" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email your project <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+          <a class="btn btn-ghost" href="#process">See how it works</a>
+        </div>
+        <ul class="chips" aria-label="Capabilities">
+          <li>Standard PLA</li>
+          <li>Up to 4 colors</li>
+          <li>Local pickup or delivery</li>
+        </ul>
+      </div>
+
+      <!-- Decorative printer. Without JS or with reduced motion it is static and complete; the CSS print,
+           idle toolhead sweep (on hover), callouts and pointer parallax are all enhancements. -->
+      <figure class="printer" aria-hidden="true">
+        <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747" fetchpriority="high">
+        <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143">
+        <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277">
+        <span class="p-bedline"></span>
+        <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+        <div class="p-head">
+          <div class="p-carriage">
+            <img src="assets/printer-toolhead.webp" alt="" width="120" height="268">
+            <span class="p-glow"></span>
+          </div>
+        </div>
+        <span class="p-anno p-anno-xy">X 128.00 · Y 064.00</span>
+        <span class="p-anno p-anno-z">Z 18.40</span>
+        <span class="p-anno p-anno-layer">L 316/316</span>
+        <span class="p-callout p-callout-color">4-color capability</span>
+        <span class="p-callout p-callout-pla">PLA production</span>
+        <span class="p-callout p-callout-local">Local fulfillment</span>
+        <figcaption class="p-status"><span class="p-bar"><span></span></span><span class="p-status-text">System ready</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section" id="services" aria-labelledby="services-title">
+    <div class="wrap">
+      <p class="eyebrow">01 / Services</p>
+      <h2 id="services-title">Built for the part you need next.</h2>
+      <ul class="cards">
+        <li class="card">
+          <span class="card-num" aria-hidden="true">01</span>
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 28 9.5v13L16 29 4 22.5v-13zM4 9.5 16 16l12-6.5M16 16v13"/></svg>
+          <h3>Rapid Prototypes</h3>
+          <p>Physical models for fit checks, design reviews, and engineering projects.</p>
+        </li>
+        <li class="card">
+          <span class="card-num" aria-hidden="true">02</span>
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M5 5h8v14h14v8H5z"/><circle cx="9" cy="9" r="1.6"/><circle cx="23" cy="23" r="1.6"/></svg>
+          <h3>Custom Parts</h3>
+          <p>One-off components and practical parts built around your dimensions and use case.</p>
+        </li>
+        <li class="card">
+          <span class="card-num" aria-hidden="true">03</span>
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="4" y="4" width="14" height="14"/><rect x="9" y="9" width="14" height="14"/><rect x="14" y="14" width="14" height="14"/></svg>
+          <h3>Multicolor Prints</h3>
+          <p>Up to four colors in one print for labels, presentations, and visual impact.</p>
+        </li>
+        <li class="card">
+          <span class="card-num" aria-hidden="true">04</span>
+          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M3 28h26M7 28V12l7-5v21M14 28V10l11 4v14M18 17h3M18 21h3"/></svg>
+          <h3>Display Models</h3>
+          <p>Architecture, classroom, pitch, and presentation models made for close-up viewing.</p>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="process" aria-labelledby="process-title">
+    <div class="wrap">
+      <p class="eyebrow">02 / Process</p>
+      <h2 id="process-title">Design to part in three steps.</h2>
+      <ol class="timeline">
+        <li>
+          <span class="step-num" aria-hidden="true">01</span>
+          <h3>Send the request</h3>
+          <ul>
+            <li>Email or upload the design file</li>
+            <li>Or describe the part</li>
+            <li>Include quantity, dimensions, color, and deadline</li>
+          </ul>
+        </li>
+        <li>
+          <span class="step-num" aria-hidden="true">02</span>
+          <h3>Review the quote</h3>
+          <ul>
+            <li>Confirm printability</li>
+            <li>Receive price and timing</li>
+            <li>Confirm pickup or local delivery</li>
+          </ul>
+        </li>
+        <li>
+          <span class="step-num" aria-hidden="true">03</span>
+          <h3>Print and receive</h3>
+          <ul>
+            <li>Your part is printed</li>
+            <li>It's visually checked</li>
+            <li>Pickup or delivery is arranged</li>
+          </ul>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="built-local" aria-labelledby="built-title">
+    <div class="wrap">
+      <p class="eyebrow">03 / Built Local</p>
+      <h2 id="built-title">One printer today. A nearby network tomorrow.</h2>
+      <div class="split">
+        <article class="panel panel-today" aria-labelledby="today-title">
+          <p class="panel-tag"><span class="status-dot" aria-hidden="true"></span>Now</p>
+          <h3 id="today-title">Operating today</h3>
+          <ul>
+            <li>Founder-operated Bambu Lab A1</li>
+            <li>Direct quote review</li>
+            <li>Local Tempe fulfillment</li>
+            <li>PLA and multicolor jobs</li>
+            <li>Direct pickup or delivery coordination</li>
+          </ul>
+        </article>
+        <article class="panel panel-vision" aria-labelledby="vision-title">
+          <p class="panel-tag">Vision · not yet operating</p>
+          <h3 id="vision-title">Marketplace vision</h3>
+          <ul>
+            <li>Vetted nearby printer owners</li>
+            <li>Local capacity matching</li>
+            <li>Hyderabad expansion</li>
+            <li>Job-status tracking</li>
+            <li>Distributed on-demand fulfillment</li>
+          </ul>
+          <figure class="network">
+            <svg viewBox="0 0 320 120" aria-hidden="true" focusable="false">
+              <path class="network-base" d="M40 86C110 6 210 6 280 86"/>
+              <path class="network-draw" d="M40 86C110 6 210 6 280 86" pathLength="1"/>
+              <circle class="network-node" cx="40" cy="86" r="5"/>
+              <circle class="network-node is-future" cx="280" cy="86" r="5"/>
+              <text x="40" y="110" text-anchor="middle">TEMPE</text>
+              <text x="280" y="110" text-anchor="middle">HYDERABAD</text>
+            </svg>
+            <figcaption>Network vision · illustrative only, not live data</figcaption>
+          </figure>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <p class="eyebrow">04 / Pricing</p>
+      <h2 id="pricing-title">Clear starting prices.</h2>
+      <!-- Shown by script.js. Without JS both markets are listed side by side. -->
+      <div class="market-switch" role="group" aria-label="Pricing market" hidden>
+        <button type="button" data-market="us" aria-pressed="true">United States</button>
+        <button type="button" data-market="in" aria-pressed="false">India</button>
+      </div>
+      <div class="price-grid">
+        <article class="price-card" data-market="us" aria-labelledby="price-us">
+          <h3 id="price-us"><span class="flag" aria-hidden="true">US</span> United States <span class="currency">USD</span></h3>
+          <p class="price-main">$1–2 <span>per gram, standard PLA</span></p>
+          <dl>
+            <div><dt>Minimum order</dt><dd>$15</dd></div>
+            <div><dt>Multicolor upgrade</dt><dd>+$5</dd></div>
+            <div><dt>Rush under 24 hours</dt><dd>+25%, when accepted</dd></div>
+          </dl>
+        </article>
+        <article class="price-card" data-market="in" aria-labelledby="price-in">
+          <h3 id="price-in"><span class="flag" aria-hidden="true">IN</span> India <span class="currency">INR</span></h3>
+          <p class="price-main">₹6–8 <span>per gram, standard PLA</span></p>
+          <dl>
+            <div><dt>Minimum order</dt><dd>₹300</dd></div>
+            <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
+            <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
+          </dl>
+        </article>
+      </div>
+      <p class="price-note">Final pricing depends on geometry, material use, print time, supports, finishing, and quantity. You approve the final quote before printing begins.</p>
+    </div>
+  </section>
+
+  <section class="section" id="categories" aria-labelledby="categories-title">
+    <div class="wrap">
+      <p class="eyebrow">Print categories</p>
+      <h2 id="categories-title">What we’re built to print</h2>
+      <p class="section-lead">These are the kinds of jobs the printer is set up for. They're categories, not past client projects.</p>
+      <!-- OWNER-INPUT: once real photos exist, replace or extend these with a photo grid (see README.md, "Portfolio photos"). -->
+      <ul class="cat-grid">
+        <li class="cat-card">
+          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><rect x="45" y="18" width="70" height="44"/><path class="hl" d="M45 18 60 8h70l-15 10M130 8v44l-15 10"/><path class="dim" d="M45 74h70M45 70v8M115 70v8M135 18v44M131 18h8M131 62h8"/></svg>
+          <h3>Engineering prototypes</h3>
+        </li>
+        <li class="cat-card">
+          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><path d="M40 20h30v34h50v18H40z"/><circle class="hl" cx="55" cy="35" r="5"/><circle class="hl" cx="105" cy="63" r="5"/><path class="dim" d="M55 26v18M46 35h18M105 54v18M96 63h18"/></svg>
+          <h3>Replacement components</h3>
+        </li>
+        <li class="cat-card">
+          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><rect x="30" y="20" width="100" height="50"/><rect class="band-1" x="30" y="20" width="25" height="50"/><rect class="band-2" x="55" y="20" width="25" height="50"/><rect class="band-3" x="80" y="20" width="25" height="50"/><rect class="band-4" x="105" y="20" width="25" height="50"/></svg>
+          <h3>Multicolor signs and labels</h3>
+        </li>
+        <li class="cat-card">
+          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><path d="M30 76h100M40 76V40l20-12v48M60 76V24l30 10v42M90 76V48l25-8v36"/><path class="hl" d="M68 40h14M68 50h14M68 60h14"/></svg>
+          <h3>Architecture and display models</h3>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap narrow">
+      <p class="eyebrow">05 / FAQ</p>
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq">
+        <details>
+          <summary>What should I include in a quote request?</summary>
+          <p>Your design file (STL or 3MF) or a sketch, photo or description, plus quantity, approximate dimensions, colors, your deadline, and whether you'd like pickup or delivery.</p>
+        </details>
+        <details>
+          <summary>What material do you currently print?</summary>
+          <!-- OWNER-INPUT: list other materials if/when offered. -->
+          <p>Standard PLA. If your part needs a different material, mention it in your request and we'll tell you whether we can help.</p>
+        </details>
+        <details>
+          <summary>Can you print in multiple colors?</summary>
+          <p>Yes, up to four colors in a single print. The multicolor upgrade is +$5 in the US or +₹150 in India.</p>
+        </details>
+        <details>
+          <summary>How quickly can I receive a part?</summary>
+          <p>It depends on the part's size and the current print queue. Your quote includes an estimated timeline. Rush jobs under 24 hours carry a 25% surcharge, when they can be accepted.</p>
+        </details>
+        <details>
+          <summary>Do you ship orders?</summary>
+          <!-- OWNER-INPUT: confirm whether shipping is offered, and where. -->
+          <p>Orders are currently fulfilled locally in Tempe, by pickup or local delivery. If you need shipping, ask in your request and we'll let you know what's possible.</p>
+        </details>
+        <details>
+          <summary>What if I don't have a finished CAD file?</summary>
+          <!-- OWNER-INPUT: confirm whether you offer design/modelling help, and how it is priced. -->
+          <p>Send a sketch, photo, measurements or a short description of what the part needs to do. We'll review it and tell you what's needed to get it printed.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section contact" id="contact" aria-labelledby="contact-title">
+    <div class="wrap narrow">
+      <p class="eyebrow">06 / Start a Project</p>
+      <h2 id="contact-title">Have a part in mind?</h2>
+      <p class="section-lead">Send the file, a sketch, or a short description. A few details are enough to start.</p>
+      <div class="contact-box">
+        <p class="contact-email"><a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">info@thetalab3d.shop</a></p>
+        <p>Helpful to include:</p>
+        <ul class="checklist">
+          <li>Your design file (STL or 3MF), or a sketch with dimensions</li>
+          <li>Quantity and colors</li>
+          <li>Your deadline</li>
+          <li>Pickup or delivery</li>
+        </ul>
+        <div class="cta-row">
+          <a class="btn" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email project details <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+          <a class="btn btn-ghost" href="https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor" target="_blank" rel="noopener">Use the detailed quote form<span class="sr-only"> (opens in a new tab)</span></a>
+        </div>
+        <p class="form-note">The Google form may ask you to sign in. Email is available as a no-form fallback.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <div class="footer-brand">
+      <p class="brand"><svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg> Theta Labs 3D</p>
+      <p>From dorm room designs to engineered reality.</p>
+      <p><a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a></p>
+    </div>
+    <div>
+      <h2 class="footer-title">Launch markets</h2>
+      <ul class="footer-list">
+        <li>Tempe, Arizona</li>
+        <li>Hyderabad, India</li>
+      </ul>
+    </div>
+    <nav aria-label="Footer">
+      <h2 class="footer-title">Site</h2>
+      <ul class="footer-list">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#process">How it works</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="privacy.html">Privacy</a></li>
+        <li><a href="terms.html">Terms</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <p class="small footer-legal">© <span data-year>2026</span> Theta Labs 3D</p>
+  </div>
+</footer>
 </body>
 </html>

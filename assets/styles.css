@@ -1,0 +1,701 @@
+/* Theta Labs 3D — site styles
+   Breakpoints (custom properties can't be used inside @media, so they're listed here):
+   768px = tablet (two-column grids, sticky header), 1024px = desktop (single-row header, two-column hero). */
+
+/* Self-hosted (SIL OFL, licences in assets/fonts). Space Grotesk is a variable font covering 400–700. */
+@font-face {
+  font-family: 'Space Grotesk';
+  font-weight: 300 700;
+  font-display: swap;
+  src: url("fonts/space-grotesk-latin.woff2") format("woff2");
+}
+@font-face {
+  font-family: 'Space Mono';
+  font-weight: 400;
+  font-display: swap;
+  src: url("fonts/space-mono-400-latin.woff2") format("woff2");
+}
+
+:root {
+  --bg: #090a09;
+  --surface: #111311;
+  --surface-2: #171917;
+  --line: #292c28;
+  --fg: #f3f4ef;
+  --muted: #a8ada4;
+  --accent: #c8ff00;
+  --accent-ink: #090a09;
+  --alert: #ff8a5c;
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+
+  --font-sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, Consolas, monospace;
+
+  --step--1: 0.875rem;
+  --step-0: 1rem;
+  --step-1: 1.15rem;
+  --step-2: 1.35rem;
+  --step-3: clamp(1.9rem, 1.4rem + 2.2vw, 2.75rem);
+  --step-4: clamp(2.6rem, 1.6rem + 6vw, 5.75rem);
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2.5rem;
+  --space-5: clamp(4rem, 3rem + 4vw, 6.5rem);
+
+  --wrap: 72rem;
+  --radius: 6px;
+  --header-h: 4.5rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+* { margin: 0; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  position: relative;
+  isolation: isolate;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: var(--step-0);
+  line-height: 1.6;
+  overflow-x: clip;
+}
+
+/* faint engineering-drawing backdrop */
+body::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: url("blueprint.svg") top center / 1000px auto repeat-y;
+  opacity: 0.07;
+  pointer-events: none;
+}
+
+img, svg { display: block; max-width: 100%; }
+h1, h2, h3 { line-height: 1.1; letter-spacing: -0.01em; text-wrap: balance; }
+p, li, dd { text-wrap: pretty; }
+
+a { color: var(--accent); text-underline-offset: 0.2em; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+.skip-link {
+  position: absolute; left: var(--space-2); top: -10rem; z-index: 100;
+  background: var(--accent); color: var(--accent-ink);
+  padding: 0.75rem 1rem; font-weight: 700; border-radius: var(--radius);
+}
+.skip-link:focus { top: var(--space-2); }
+
+.wrap { width: min(100% - 2rem, var(--wrap)); margin-inline: auto; }
+.narrow { --wrap: 48rem; }
+.accent { color: var(--accent); }
+.small { font-size: var(--step--1); color: var(--muted); }
+
+.decrypt-noise { opacity: 0.55; }  /* still-scrambled characters while a label decrypts (assets/script.js) */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step--1);
+  color: var(--accent);
+  margin-bottom: var(--space-2);
+}
+
+/* ---------- buttons ---------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 48px;
+  padding: 0.75rem 1.4rem;
+  background: var(--accent);
+  color: var(--accent-ink);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+}
+.btn:is(:hover, :focus-visible) { box-shadow: 0 8px 24px rgb(200 255 0 / 0.22); }
+html.motion .btn:is(:hover, :focus-visible) { transform: translateY(-2px); }
+.btn:active { transform: translateY(0) scale(0.97); box-shadow: none; transition-duration: 0.08s; }
+.btn .arrow { width: 0.9em; height: 0.9em; fill: none; stroke: currentColor; stroke-width: 2; transition: transform 0.2s ease; }
+.btn:is(:hover, :focus-visible) .arrow { transform: translate(2px, -2px); }
+.btn-ghost { background: transparent; color: var(--fg); border-color: var(--line); }
+.btn-ghost:is(:hover, :focus-visible) { border-color: var(--accent); box-shadow: none; }
+.btn-sm { min-height: 44px; padding: 0.5rem 0.9rem; font-size: var(--step--1); }
+.cta-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+/* ---------- header ---------- */
+.site-header {
+  position: relative;
+  border-bottom: 1px solid var(--line);
+  z-index: 50;
+}
+/* The blur lives on a pseudo-element: backdrop-filter on the header itself would trap the fixed menu panel. */
+.site-header::before {
+  content: ""; position: absolute; inset: 0; z-index: -1;
+  background: rgb(9 10 9 / 0.86); backdrop-filter: blur(10px);
+}
+.scroll-progress { display: none; }
+@supports (animation-timeline: scroll()) {
+  /* transparent over the top of the page, solid with a border after ~80px of scroll */
+  .site-header::before { animation: header-fill linear both; animation-timeline: scroll(); animation-range: 0 80px; }
+  .site-header { animation: header-line linear both; animation-timeline: scroll(); animation-range: 0 80px; }
+  .scroll-progress {
+    display: block; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: var(--accent); transform-origin: left;
+    animation: grow linear both; animation-timeline: scroll();
+  }
+}
+@keyframes header-fill { from { opacity: 0; } }
+@keyframes header-line { from { border-bottom-color: transparent; } }
+@keyframes grow { from { transform: scaleX(0); } }
+.header-inner {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  padding-block: 0.75rem;
+}
+.brand {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  color: var(--fg); text-decoration: none;
+  font-weight: 700; font-size: var(--step-1);
+  min-height: 44px;
+}
+.brand-mark { width: auto; height: 1.6em; fill: none; stroke: var(--accent); stroke-width: 24; }
+.site-nav { order: 3; flex-basis: 100%; }
+.site-nav ul {
+  display: flex; flex-wrap: wrap; gap: 0 0.25rem;
+  list-style: none; padding: 0; margin-left: -0.55rem;
+}
+.site-nav a {
+  display: inline-flex; align-items: center; min-height: 44px;
+  padding-inline: 0.55rem;
+  color: var(--fg); text-decoration: none; font-size: 0.95rem;
+}
+.site-nav a:hover, .site-nav a[aria-current] { color: var(--accent); }
+
+@media (min-width: 768px) {
+  .site-header { position: sticky; top: 0; }
+  html { scroll-padding-top: calc(var(--header-h) + 3rem); }
+}
+@media (min-width: 1024px) {
+  html { scroll-padding-top: calc(var(--header-h) + 1rem); }
+  .site-nav { order: 0; flex-basis: auto; }
+  .site-nav ul { margin-left: 0; }
+}
+
+/* ---------- staggered off-canvas menu (all widths, only when JS adds .js; without JS the nav is a plain link list) ----------
+   Closing uses the base transitions (quick, no delay); opening uses the .menu-open ones (staggered). */
+.menu-toggle, .menu-layers, .nav-extra { display: none; }
+
+.js { scroll-padding-top: 5.5rem; }
+.menu-locked { overflow: hidden; }
+.js .site-header { position: sticky; top: 0; }
+.js .header-inner { flex-wrap: nowrap; }
+.js .brand { margin-right: auto; position: relative; z-index: 3; }
+.js .brand, .js .header-cta, .js .menu-toggle { white-space: nowrap; flex-shrink: 0; }
+
+.js .menu-toggle {
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  position: relative; z-index: 3;
+  min-height: 44px; min-width: 44px; padding: 0 0.5rem;
+  background: none; border: 0; color: var(--fg);
+  font: 500 var(--step-0) var(--font-sans); cursor: pointer;
+  transition: color 0.3s ease 0.18s;
+}
+.menu-open .menu-toggle { color: var(--accent); }
+/* Menu/Close label rolls through several lines (built by the menu script), like a slot machine */
+.menu-toggle-text { display: block; height: 1.25em; line-height: 1.25; overflow: hidden; }
+.menu-toggle-text span { display: block; }
+.menu-icon { position: relative; width: 14px; height: 14px; transition: transform 0.35s ease-in-out; }
+.menu-icon::before, .menu-icon::after {
+  content: ""; position: absolute; left: 0; top: 50%; width: 100%; height: 2px; margin-top: -1px;
+  background: currentColor; border-radius: 1px;
+}
+.menu-icon::after { transform: rotate(90deg); }
+.menu-open .menu-icon { transform: rotate(225deg); transition: transform 0.8s cubic-bezier(.16, 1, .3, 1); }
+
+/* the colored layers that sweep in ahead of the panel */
+.js .menu-layers { display: block; }
+.menu-layers span, .js .site-nav {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(100%, 30rem);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(.55, 0, 1, .45);
+}
+.menu-layers span { z-index: 1; background: var(--accent); }
+.menu-layers span + span { background: var(--surface-2); }
+.menu-open .menu-layers span { transform: none; transition: transform 0.5s cubic-bezier(.16, 1, .3, 1); }
+.menu-open .menu-layers span + span { transition-delay: 0.07s; }
+
+.js .site-nav {
+  z-index: 2;
+  display: flex; flex-direction: column; gap: var(--space-4);
+  padding: 6rem var(--space-3) var(--space-3);
+  background: var(--bg); border-left: 1px solid var(--line);
+  overflow-y: auto; visibility: hidden;
+  transition: transform 0.32s cubic-bezier(.55, 0, 1, .45), visibility 0s 0.32s;
+}
+.menu-open .site-nav { transform: none; visibility: visible; transition: transform 0.65s cubic-bezier(.16, 1, .3, 1) 0.15s; }
+
+.js .site-nav ul { flex-direction: column; gap: 0.25rem; margin: 0; counter-reset: nav; }
+.js .site-nav li { position: relative; overflow: hidden; counter-increment: nav; padding-right: 2.5rem; }
+.js .site-nav li::after {
+  content: counter(nav, decimal-leading-zero);
+  position: absolute; top: 0.6rem; right: 0;
+  font-family: var(--font-mono); font-size: 0.8rem; color: var(--accent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.js .site-nav li a { position: relative; }
+.js .site-nav li a[aria-current]::before {  /* active-section marker in the menu panel */
+  content: ""; position: absolute; left: 0; bottom: 0.1em; width: 1.5rem; height: 3px; background: var(--accent);
+}
+.menu-open .site-nav li::after { opacity: 1; transition: opacity 0.6s ease calc(0.35s + var(--i, 0) * 0.08s); }
+.js .site-nav li a {
+  padding: 0; font-size: clamp(2rem, 9vw, 3rem); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em;
+  transform: translateY(140%) rotate(10deg); transform-origin: 0 50%;
+  transition: transform 0.3s ease-in;
+}
+.menu-open .site-nav li a { transform: none; transition: transform 1s cubic-bezier(.16, 1, .3, 1) calc(0.25s + var(--i, 0) * 0.1s); }
+.js .site-nav a:focus-visible { outline-offset: -3px; }
+
+.js .nav-extra {
+  display: grid; gap: var(--space-2); justify-items: start; margin-top: auto;
+  opacity: 0; transform: translateY(25px); transition: opacity 0.2s, transform 0.2s;
+}
+.js .nav-extra a { font-size: var(--step-0); }
+.js .nav-extra .btn { color: var(--accent-ink); padding-inline: 1.4rem; }
+.js .nav-extra a:not(.btn) { padding: 0; font-weight: 400; overflow-wrap: anywhere; }
+.menu-open .nav-extra { opacity: 1; transform: none; transition: opacity 0.5s ease 0.45s, transform 0.55s cubic-bezier(.16, 1, .3, 1) 0.45s; }
+@media (max-width: 479.98px) {
+  .js .header-inner { gap: var(--space-1); }
+  .menu-toggle-text { display: none !important; }  /* icon only; the button keeps its aria-label */
+}
+@media (max-width: 479.98px) {  /* header CTA reads "Quote"; its accessible name stays "Request a Quote" */
+  .cta-long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}
+@media (max-width: 374.98px) {  /* keeps logo, quote button and menu on one row down to 320px */
+  .js .brand { font-size: 1rem; gap: 0.4rem; }
+  .js .header-cta { padding-inline: 0.7rem; }
+}
+/* reduced motion: the menu opens and closes instantly */
+html:not(.motion) .site-header *, html:not(.motion) .site-header *::before, html:not(.motion) .site-header *::after {
+  transition-duration: 0s !important; transition-delay: 0s !important;
+}
+
+/* ---------- hero ---------- */
+.hero { padding-block: var(--space-4) var(--space-5); }
+.hero-inner { display: grid; gap: var(--space-4); align-items: center; }
+.hero h1 { font-size: var(--step-4); font-weight: 700; margin-bottom: var(--space-3); }
+.lead { font-size: var(--step-1); color: var(--muted); max-width: 36rem; margin-bottom: var(--space-4); }
+
+@media (min-width: 1024px) {
+  .hero { padding-block: var(--space-5); }
+  .hero-inner { grid-template-columns: 1.15fr 1fr; }
+  .hero h1 { font-size: min(5.6vw, 5.75rem); }
+}
+
+/* ---------- printer animation ----------
+   Geometry is in "units" of 1/48 of the figure width (the original scene was 48vmin wide). */
+.printer, .intro-printer {
+  --u: calc(100cqi / 48);
+  position: relative;
+  container-type: inline-size;
+  aspect-ratio: 48 / 44.84;
+}
+.printer { width: min(100%, 30rem); margin: 0 auto 3rem; }
+.printer > *, .intro-printer > * { position: absolute; }
+.p-frame { inset: 0; width: 100%; height: auto; filter: brightness(0.6) contrast(1.15); }
+.p-rail { left: calc(var(--u) * 7); top: calc(var(--u) * 4.52); width: calc(var(--u) * 34.27); height: auto; filter: brightness(0.6) contrast(1.15); }
+.p-spool { left: calc(var(--u) * 39.8); top: calc(var(--u) * 10.42); width: calc(var(--u) * 4.5); height: auto; }
+.p-logo {
+  /* same 100:150 box as the header .brand-mark, so the intro logo can land on it exactly */
+  left: calc(var(--u) * 16.85); top: calc(var(--u) * 19.71);
+  width: calc(var(--u) * 11.04); height: calc(var(--u) * 16.56);
+  fill: none; stroke: var(--accent); stroke-width: 24;
+}
+.p-head { left: calc(var(--u) * 18.76); top: calc(var(--u) * 2.71); width: calc(var(--u) * 6.78); }
+.p-head img { width: 100%; height: auto; }
+.p-glow {
+  position: absolute; left: calc(var(--u) * 3.39); top: calc(var(--u) * 14.83);
+  width: calc(var(--u) * 0.5); aspect-ratio: 1; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 calc(var(--u) * 0.8) calc(var(--u) * 0.25) rgb(214 255 63 / 0.7);
+  opacity: 0;
+}
+.p-status {
+  top: calc(100% + 0.75rem); left: 0; right: 0;
+  display: grid; justify-items: center; gap: 0.4rem;
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted);
+}
+.p-bar { display: block; width: 10rem; height: 2px; background: var(--line); }
+.p-bar span { display: block; height: 100%; background: var(--accent); transform-origin: left; }
+
+/* hero printer: assembles (<1 s), then plays its short CSS print, only when the full intro didn't (html.intro-played) */
+html.motion { scroll-behavior: smooth; }
+html.motion:not(.intro-played) .printer :is(.p-frame, .p-rail, .p-spool) { animation: assemble 0.6s var(--ease-out) backwards; }
+html.motion:not(.intro-played) .printer .p-rail  { animation-delay: 0.08s; }
+html.motion:not(.intro-played) .printer .p-spool { animation-delay: 0.16s; }
+html.motion:not(.intro-played) .printer .p-head  { animation: assemble 0.6s var(--ease-out) 0.24s backwards, sweep 0.56s ease-in-out 0.9s 5; }
+html.motion:not(.intro-played) .printer .p-logo  { animation: print 2.8s steps(28) 0.9s backwards; }
+html.motion:not(.intro-played) .printer .p-glow  { animation: glow 0.7s ease-in-out 0.9s 4; }
+html.motion:not(.intro-played) .printer .p-bar span { animation: progress 2.8s linear 0.9s backwards; }
+@keyframes assemble { from { opacity: 0; transform: translateY(10px); } }
+@keyframes print    { from { clip-path: inset(100% 0 0 0); } to { clip-path: inset(0); } }
+@keyframes sweep    { 25% { translate: calc(var(--u) * -3) 0; } 75% { translate: calc(var(--u) * 3) 0; } }
+@keyframes glow     { 50% { opacity: 1; } }
+@keyframes progress { from { transform: scaleX(0); } }
+
+/* ---------- first-visit intro ----------
+   Shown only when the <head> script adds html.intro: JS on, first visit this session, no reduced motion, no #section link.
+   The intro script at the end of index.html drives it. If that script never runs, the failsafe hides everything after 8 s. */
+.intro-overlay { display: none; }
+.intro .intro-overlay {
+  display: grid; place-items: center;
+  position: fixed; inset: 0; z-index: 200; overflow: hidden;
+  animation: intro-failsafe 0.01s 8s forwards;
+}
+.intro .site-header .brand-mark { opacity: 0; animation: intro-failsafe-show 0.01s 8s forwards; }
+@keyframes intro-failsafe      { to { visibility: hidden; } }
+@keyframes intro-failsafe-show { to { opacity: 1; } }
+
+.intro-bg { position: absolute; inset: 0; background: var(--bg); }
+.intro-overlay { --intro-w: min(88vw, 55vh, 36rem); }
+.intro-printer { width: var(--intro-w); opacity: 0; }
+.intro-printer .p-logo { clip-path: inset(100% 0 0 0); transform-origin: 0 0; }
+.intro-printer .p-glow { opacity: 1; }
+
+.intro-copy {
+  position: absolute; inset: 0; z-index: 2;
+  display: grid; place-content: center; text-align: center; padding: var(--space-2);
+}
+.intro-copy > * { animation: intro-up 0.6s ease backwards; }
+.intro-copy > :nth-child(2) { animation-delay: 0.1s; }
+.intro-copy > :nth-child(3) { animation-delay: 0.2s; }
+@keyframes intro-up { from { opacity: 0; transform: translateY(8px); } }
+.intro-kicker { color: var(--muted); font-size: 0.8rem; letter-spacing: 0.3em; text-transform: uppercase; margin-bottom: 1.1rem; }
+.intro-title { font-size: clamp(2rem, 6vw, 4.5rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.01em; }
+.intro-sub { color: var(--muted); margin-top: 1.25rem; }
+
+.intro-status, .intro-layer {
+  position: absolute; left: 50%; translate: -50% 0;
+  font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.18em; text-transform: uppercase;
+  text-align: center; white-space: nowrap;
+}
+.intro-status { top: max(5.5rem, 12vh); display: grid; justify-items: center; gap: 0.4rem; color: var(--accent); }
+.intro-status .p-bar { width: 13.75rem; }
+.intro-status .p-bar span { transform: scaleX(0); }
+.intro-layer { top: calc(50% + var(--intro-w) * 0.467 + 1rem); color: var(--muted); }
+
+.intro-skip {
+  position: absolute; right: var(--space-2); bottom: var(--space-2); z-index: 3;
+  min-height: 44px; padding: 0.5rem 1rem;
+  background: rgb(9 10 9 / 0.6); color: var(--fg);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  font: 0.85rem var(--font-mono); letter-spacing: 0.08em; cursor: pointer;
+}
+.intro-skip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---------- sections ---------- */
+.section { padding-block: var(--space-5); border-top: 1px solid var(--line); }
+.section h2 { font-size: var(--step-3); margin-bottom: var(--space-3); }
+.section-lead { color: var(--muted); max-width: 40rem; margin-top: calc(var(--space-2) * -0.5); margin-bottom: var(--space-4); }
+h3 { font-size: var(--step-1); margin-bottom: var(--space-1); }
+
+.cards {
+  display: grid; gap: var(--space-2);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+  list-style: none; padding: 0;
+}
+.card, .price-card, .panel, .cat-card, .contact-box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-3);
+}
+
+.card p, .timeline li li, .panel li { color: var(--muted); }
+
+/* pricing */
+.price-grid { display: grid; gap: var(--space-2); margin-bottom: var(--space-2); }
+@media (min-width: 768px) { .price-grid { grid-template-columns: 1fr 1fr; } }
+.price-card h3 { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+.flag, .currency {
+  font-family: var(--font-mono); font-size: 0.75rem; font-weight: 400;
+  border: 1px solid var(--line); border-radius: 3px; padding: 0.1rem 0.35rem;
+}
+.flag { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
+.currency { color: var(--muted); margin-left: auto; }
+.price-main { font-size: var(--step-3); font-weight: 700; margin-block: var(--space-2); }
+.price-main span { font-size: var(--step-0); font-weight: 400; color: var(--muted); }
+.price-card dl div {
+  display: flex; justify-content: space-between; gap: var(--space-2);
+  padding-block: 0.6rem; border-top: 1px solid var(--line);
+}
+.price-card dt { color: var(--muted); }
+.price-card dd { font-weight: 700; font-family: var(--font-mono); }
+
+
+/* FAQ */
+.faq details { border-bottom: 1px solid var(--line); }
+.faq summary {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--space-2);
+  min-height: 3.5rem; padding-block: 0.75rem;
+  cursor: pointer; font-weight: 500; font-size: var(--step-1);
+  list-style: none;
+}
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after {
+  content: "+"; flex-shrink: 0; font-family: var(--font-mono); color: var(--accent); font-size: 1.5rem; line-height: 1;
+  transition: transform 0.3s var(--ease-out);
+}
+.faq details[open] summary::after { transform: rotate(45deg); }  /* + turns into × */
+/* Smooth open/close on native <details> (Chromium 131+; other browsers open instantly). */
+html.motion .faq details { interpolate-size: allow-keywords; }
+html.motion .faq details::details-content {
+  height: 0; overflow: clip;
+  transition: height 0.4s var(--ease-out), content-visibility 0.4s allow-discrete;
+}
+html.motion .faq details[open]::details-content { height: auto; }
+.faq summary:hover { color: var(--accent); }
+.faq details p { color: var(--muted); padding-bottom: var(--space-2); max-width: 42rem; }
+
+/* contact */
+.contact-email { font-size: var(--step-2); font-weight: 700; margin-bottom: var(--space-2); overflow-wrap: anywhere; }
+.checklist { color: var(--muted); margin: var(--space-1) 0 var(--space-3); padding-left: 1.2rem; }
+.contact-box .small { margin-top: var(--space-2); }
+
+
+/* ======================= additions for the Theta Labs 3D brief ======================= */
+
+/* ---------- section labels: a short technical line (sections) or a status light (hero) ---------- */
+.section .eyebrow::before {
+  content: ""; display: inline-block; width: 1.5rem; height: 1px; margin-right: 0.6rem;
+  vertical-align: middle; background: currentColor; transform-origin: left;
+  transition: transform 0.6s var(--ease-out) 0.15s;
+}
+html.motion .eyebrow.reveal:not(.is-in)::before { transform: scaleX(0); }
+.hero .eyebrow::before, .p-status-text::before, .status-dot {
+  content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px rgb(200 255 0 / 0.7);
+}
+.hero .eyebrow::before { margin-right: 0.6rem; vertical-align: 0.05em; }
+.p-status-text::before { margin-right: 0.5rem; vertical-align: 0.05em; }
+html.motion .hero .eyebrow::before, html.motion .p-status-text::before, html.motion .status-dot { animation: pulse 1.6s ease-in-out 3; }  /* stops after ~5 s */
+@keyframes pulse { 50% { opacity: 0.35; } }
+
+/* ---------- links: thin underline always (not colour alone), a second line reveals on hover/focus ---------- */
+:is(.section, .site-footer, .prose) a:not(.btn) {
+  text-decoration: none;
+  background:
+    linear-gradient(var(--fg), var(--fg)) 0 100% / 0 2px no-repeat,
+    linear-gradient(currentColor, currentColor) 0 100% / 100% 1px no-repeat;
+  transition: background-size 0.3s var(--ease-out);
+}
+:is(.section, .site-footer, .prose) a:not(.btn):is(:hover, :focus-visible) { background-size: 100% 2px, 100% 1px; }
+
+/* ---------- hero capabilities ---------- */
+.lead { margin-bottom: var(--space-3); }
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; list-style: none; padding: 0; margin-top: var(--space-3); }
+.chips li {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.75rem; border: 1px solid var(--line); border-radius: 999px;
+  background: rgb(17 19 17 / 0.7); font: 0.8rem var(--font-mono); color: var(--fg);
+}
+.chips li::before { content: ""; width: 0.4rem; height: 0.4rem; border-radius: 1px; background: var(--accent); }
+html.motion:not(.intro-played) .chips li { animation: assemble 0.5s var(--ease-out) 0.35s backwards; }
+html.motion:not(.intro-played) .chips li:nth-child(2) { animation-delay: 0.5s; }
+html.motion:not(.intro-played) .chips li:nth-child(3) { animation-delay: 0.65s; }
+
+/* ---------- printer extras: bed line, annotations, hover callouts, idle sweep, pointer parallax ---------- */
+.p-bedline {
+  left: calc(var(--u) * 13); top: calc(var(--u) * 35.1); width: calc(var(--u) * 22); height: 2px;
+  background: var(--accent); box-shadow: 0 0 10px 1px rgb(200 255 0 / 0.6); opacity: 0.75;
+}
+html.motion .p-bedline { animation: pulse 1.8s ease-in-out 3; }
+.p-anno { font: 0.68rem var(--font-mono); letter-spacing: 0.08em; color: var(--muted); white-space: nowrap; opacity: 0.85; }
+.p-anno-xy { left: 0; top: calc(var(--u) * 0.5); }
+.p-anno-layer { right: 0; top: calc(var(--u) * 0.5); }
+.p-anno-z { left: 0; top: calc(var(--u) * 26); }
+.p-callout {
+  font: 0.7rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap;
+  color: var(--accent); background: rgb(9 10 9 / 0.85); border: 1px solid var(--accent); border-radius: 3px;
+  padding: 0.2rem 0.45rem; opacity: 0; translate: 0 4px; pointer-events: none;
+  transition: opacity 0.25s ease, translate 0.25s var(--ease-out);
+}
+.p-callout-color { right: 0; top: calc(var(--u) * 6); }
+.p-callout-pla { left: 0; top: calc(var(--u) * 14); }
+.p-callout-local { right: calc(var(--u) * 2); top: calc(var(--u) * 40.5); }
+.printer:hover .p-callout { opacity: 1; translate: 0 0; }
+.printer:hover .p-callout-pla { transition-delay: 0.06s; }
+.printer:hover .p-callout-local { transition-delay: 0.12s; }
+html.motion .p-carriage { animation: idle-sweep 2.4s ease-in-out infinite paused; }  /* only runs while hovered */
+html.motion .printer:hover .p-carriage { animation-play-state: running; }
+@keyframes idle-sweep { 25% { translate: calc(var(--u) * -4) 0; } 75% { translate: calc(var(--u) * 4) 0; } }
+/* parallax depth per layer (px at the edge of the printer); --px/--py are set by script.js on desktop */
+.p-frame, .p-rail { --d: -3px; }
+.p-spool { --d: -5px; }
+.p-logo, .p-bedline { --d: 4px; }
+.p-head { --d: 6px; }
+.p-anno, .p-callout { --d: 8px; }
+html.motion .printer > * {
+  transform: translate(calc(var(--px, 0) * var(--d, 0px)), calc(var(--py, 0) * var(--d, 0px)));
+  transition: transform 0.4s var(--ease-out), opacity 0.25s ease, translate 0.25s var(--ease-out);
+}
+
+/* ---------- service cards ---------- */
+.card {
+  position: relative; isolation: isolate; overflow: hidden;
+  transition: border-color 0.25s ease, translate 0.25s var(--ease-out), box-shadow 0.25s ease;
+}
+.card::before {  /* measurement grid that fades in on hover */
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0; transition: opacity 0.3s ease;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 16px 16px;
+  mask-image: linear-gradient(to bottom, #000, transparent 85%);
+}
+.card:hover { border-color: var(--accent); box-shadow: 0 12px 30px rgb(0 0 0 / 0.35); }
+html.motion .card:hover { translate: 0 -3px; }
+.card:hover::before { opacity: 0.7; }
+.card-num { position: absolute; top: var(--space-2); right: var(--space-2); font: 0.75rem var(--font-mono); color: var(--muted); }
+.card-icon { width: 2rem; height: 2rem; margin-bottom: var(--space-3); fill: none; stroke: var(--accent); stroke-width: 1.5; }
+
+/* ---------- process timeline: vertical on mobile, horizontal from 768px; the line fills as it scrolls in ---------- */
+.timeline { position: relative; display: grid; gap: var(--space-4); list-style: none; padding: 0 0 0 3rem; }
+.timeline::before, .timeline::after {
+  content: ""; position: absolute; left: 1.05rem; top: 0.6rem; bottom: 0.6rem; width: 2px; background: var(--line);
+}
+.timeline::after { background: var(--accent); transform-origin: top; transition: transform 1.2s var(--ease-out) 0.1s; }
+html.motion .timeline.reveal:not(.is-in)::after { transform: scaleY(0); }
+.timeline > li { position: relative; }
+.step-num {
+  position: absolute; left: -3rem; top: -0.35rem;
+  display: grid; place-items: center; width: 2.25rem; height: 2.25rem;
+  border: 1px solid var(--accent); border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); box-shadow: 0 0 14px rgb(200 255 0 / 0.35);
+  font: 0.8rem var(--font-mono);
+  transition: background-color 0.4s ease 0.1s, color 0.4s ease 0.1s, border-color 0.4s ease 0.1s, box-shadow 0.4s ease 0.1s;
+}
+.timeline > li:nth-child(2) .step-num { transition-delay: 0.5s; }
+.timeline > li:nth-child(3) .step-num { transition-delay: 0.9s; }
+html.motion .timeline.reveal:not(.is-in) .step-num { background: var(--bg); color: var(--muted); border-color: var(--line); box-shadow: none; }
+.timeline ul { display: grid; gap: 0.35rem; list-style: none; padding: 0; }
+.timeline li li::before { content: "› "; color: var(--accent); font-family: var(--font-mono); }
+@media (min-width: 768px) {
+  .timeline { grid-template-columns: repeat(3, 1fr); padding: 3.75rem 0 0; }
+  .timeline::before, .timeline::after { left: 1.1rem; right: 1.1rem; top: 1.1rem; bottom: auto; width: auto; height: 2px; }
+  .timeline::after { transform-origin: left; }
+  html.motion .timeline.reveal:not(.is-in)::after { transform: scaleX(0); }
+  .step-num { left: 0; top: -3.75rem; }
+}
+
+/* ---------- today vs vision ---------- */
+.split { display: grid; gap: var(--space-2); }
+@media (min-width: 768px) { .split { grid-template-columns: 1fr 1fr; } }
+.panel ul { display: grid; gap: 0.5rem; list-style: none; padding: 0; margin-top: var(--space-2); }
+.panel li { position: relative; padding-left: 1.25rem; }
+.panel li::before { content: ""; position: absolute; left: 0; top: 0.75em; width: 0.6rem; height: 1px; background: var(--accent); }
+.panel-tag {
+  display: flex; align-items: center; gap: 0.5rem; margin-bottom: var(--space-2);
+  font: 0.75rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+}
+.panel-today { border-color: rgb(200 255 0 / 0.45); }
+.panel-vision {  /* clearly "not yet": dashed, hatched, muted */
+  border-style: dashed;
+  background: repeating-linear-gradient(135deg, transparent 0 10px, rgb(255 255 255 / 0.025) 10px 11px), var(--surface);
+}
+.panel-vision .panel-tag { color: var(--muted); }
+.panel-vision li::before { background: var(--muted); }
+.network { margin-top: var(--space-3); }
+.network svg { width: 100%; height: auto; overflow: visible; }
+.network-base { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 4 6; }
+.network-draw { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 1; opacity: 0.6; transition: stroke-dashoffset 1.6s var(--ease-out) 0.3s; }
+html.motion .reveal:not(.is-in) .network-draw { stroke-dashoffset: 1; }
+.network-node { fill: var(--accent); }
+.network-node.is-future { fill: var(--bg); stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 2 2; }
+.network text { fill: var(--muted); font: 10px var(--font-mono); letter-spacing: 0.1em; }
+.network figcaption { margin-top: var(--space-1); font: 0.75rem var(--font-mono); color: var(--muted); }
+
+/* ---------- pricing market switch (shown by script.js; without JS both cards are visible) ---------- */
+.market-switch {
+  display: inline-flex; gap: 0.25rem; padding: 0.25rem; margin-bottom: var(--space-3);
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface);
+}
+.market-switch[hidden] { display: none; }
+.market-switch button {
+  min-height: 44px; padding: 0.5rem 1.1rem; border: 0; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--muted); font: 500 var(--step--1) var(--font-sans);
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.market-switch button:hover { color: var(--fg); }
+.market-switch button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+.price-grid.has-switch { grid-template-columns: 1fr; max-width: 36rem; }
+.price-grid.has-switch > .price-card { grid-area: 1 / 1; transition: opacity 0.35s ease, translate 0.35s var(--ease-out), visibility 0.35s; }
+.price-grid.has-switch > .price-card:not(.is-active) { opacity: 0; visibility: hidden; }
+html.motion .price-grid.has-switch > .price-card:not(.is-active) { translate: 0 8px; }
+.price-note { max-width: 40rem; color: var(--muted); }
+
+/* ---------- print categories ---------- */
+.cat-grid {
+  display: grid; gap: var(--space-2); list-style: none; padding: 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));  /* two per row on phones */
+}
+.cat-card { transition: border-color 0.25s ease; }
+.cat-card:hover { border-color: var(--accent); }
+.cat-card svg {
+  width: 100%; height: auto; margin-bottom: var(--space-2);
+  fill: none; stroke: var(--muted); stroke-width: 1.2;
+  border: 1px solid var(--line); border-radius: 4px;
+  background-image: linear-gradient(var(--surface-2) 1px, transparent 1px), linear-gradient(90deg, var(--surface-2) 1px, transparent 1px);
+  background-size: 10px 10px;
+}
+.cat-card .hl { stroke: var(--accent); }
+.cat-card .dim { stroke: var(--accent); stroke-width: 0.8; opacity: 0.7; }
+.cat-card [class^="band-"] { stroke: none; }
+.cat-card .band-1 { fill: var(--accent); }
+.cat-card .band-2 { fill: var(--fg); }
+.cat-card .band-3 { fill: var(--muted); }
+.cat-card .band-4 { fill: var(--line); }
+.cat-card h3 { margin: 0; font-size: var(--step-0); }
+
+/* ---------- quote section note ---------- */
+.form-note { margin-top: var(--space-2); padding-left: 0.75rem; border-left: 2px solid var(--alert); color: var(--fg); font-size: var(--step--1); }
+
+/* ---------- footer ---------- */
+.site-footer { border-top: 1px solid var(--line); padding-block: var(--space-4) var(--space-3); color: var(--muted); }
+.footer-inner { display: grid; gap: var(--space-3); }
+@media (min-width: 768px) { .footer-inner { grid-template-columns: 2fr 1fr 1fr; } }
+.footer-brand { display: grid; gap: 0.5rem; justify-items: start; }
+.site-footer .brand { min-height: 0; font-size: var(--step-0); color: var(--fg); }
+.footer-title { margin-bottom: 0.75rem; font: 0.75rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg); }
+.footer-list { display: grid; gap: 0.35rem; list-style: none; padding: 0; }
+.footer-legal { grid-column: 1 / -1; padding-top: var(--space-2); border-top: 1px solid var(--line); }
+
+/* ---------- scroll reveal (classes added by script.js, only with motion; content is visible without it) ---------- */
+html.motion .reveal {
+  opacity: 0; transform: translateY(24px);
+  transition: opacity 0.6s var(--ease-out), transform 0.6s var(--ease-out);
+  transition-delay: calc(var(--i, 0) * 80ms);
+}
+html.motion .reveal.is-in { opacity: 1; transform: none; }
+
+/* ---------- privacy / terms pages ---------- */
+.prose h1 { font-size: var(--step-3); margin-bottom: var(--space-2); }
+.prose h2 { font-size: var(--step-2); margin: var(--space-4) 0 var(--space-1); }
+.prose p, .prose ul { max-width: 42rem; margin-bottom: var(--space-2); color: var(--muted); }
+.prose li + li { margin-top: 0.35rem; }

@@ -1,0 +1,17 @@
+{
+  "businessName": "Theta Labs 3D",
+  "tagline": "From dorm room designs to engineered reality.",
+  "email": "info@thetalab3d.shop",
+  "quoteFormUrl": "https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor",
+  "siteUrl": "https://thetalab3d.shop/",
+  "socialImage": "assets/og-image.png",
+  "locationUS": "Tempe, Arizona",
+  "locationIN": "Hyderabad, India",
+  "priceUSRate": "$1–2",
+  "priceUSMinimum": "$15",
+  "priceUSMulticolor": "+$5",
+  "priceINRate": "₹6–8",
+  "priceINMinimum": "₹300",
+  "priceINMulticolor": "+₹150",
+  "rushSurcharge": "25%"
+}
