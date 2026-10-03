@@ -46,13 +46,17 @@
 
   --wrap: 72rem;
   --radius: 6px;
-  --header-h: 4.5rem;
+  --header-h: 4.3rem;  /* fixed header height (incl. 1px border); scales with the root size */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
 * { margin: 0; }
 
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* 16px up to 1600px wide, then grows (20px at 2560px, max 24px) so large monitors scale the whole layout (all sizes are rem) */
+  font-size: clamp(100%, 0.5833rem + 0.4167vw, 150%);
+}
 
 body {
   position: relative;
@@ -72,7 +76,7 @@ body::before {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: url("blueprint.svg") top center / 1000px auto repeat-y;
+  background: url("blueprint.svg") top center / 62.5rem auto repeat-y;  /* 1000px at the default size, scales on large screens */
   opacity: 0.07;
   pointer-events: none;
 }
@@ -138,6 +142,7 @@ html.motion .btn:is(:hover, :focus-visible) { transform: translateY(-2px); }
 .btn-ghost { background: transparent; color: var(--fg); border-color: var(--line); }
 .btn-ghost:is(:hover, :focus-visible) { border-color: var(--accent); box-shadow: none; }
 .btn-sm { min-height: 44px; padding: 0.5rem 0.9rem; font-size: var(--step--1); }
+.header-cta { gap: 0; }  /* the CTA text is split into two spans; no flex gap between them */
 .cta-row { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 /* ---------- header ---------- */
@@ -168,7 +173,8 @@ html.motion .btn:is(:hover, :focus-visible) { transform: translateY(-2px); }
 .header-inner {
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: var(--space-1) var(--space-2);
-  padding-block: 0.75rem;
+  min-height: calc(var(--header-h) - 1px);
+  padding-block: 0;
 }
 .brand {
   display: inline-flex; align-items: center; gap: 0.6rem;
@@ -304,10 +310,12 @@ html:not(.motion) .site-header *, html:not(.motion) .site-header *::before, html
 .hero h1 { font-size: var(--step-4); font-weight: 700; margin-bottom: var(--space-3); }
 .lead { font-size: var(--step-1); color: var(--muted); max-width: 36rem; margin-bottom: var(--space-4); }
 
-@media (min-width: 1024px) {
-  .hero { padding-block: var(--space-5); }
+@media (min-width: 900px) {  /* from 900px (incl. half-snapped desktop windows) the hero is two columns */
+  /* hero fills the first screen at any aspect ratio; headline and printer scale with the shorter side */
+  .hero { display: grid; align-items: center; min-height: calc(100svh - var(--header-h)); padding-block: var(--space-4); }
   .hero-inner { grid-template-columns: 1.15fr 1fr; }
-  .hero h1 { font-size: min(5.6vw, 5.75rem); }
+  .hero h1 { font-size: min(5.6vw, 11svh, 5.75rem); }
+  .hero .printer { width: min(100%, 30rem, 58svh); }
 }
 
 /* ---------- printer animation ----------
