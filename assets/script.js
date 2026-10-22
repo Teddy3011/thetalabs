@@ -195,7 +195,7 @@ if (motion) {
 
   // Section reveals: blocks rise 24px and fade in once (CSS in styles.css, "reveal"). Only blocks below the fold
   // are hidden, so nothing visible on load flashes out and back. Grid items stagger via --i.
-  const GRIDS = '.cards, .split, .cat-grid';
+  const GRIDS = '.cards, .split';
   const blocks = [...document.querySelectorAll(`main .section .wrap > :not(${GRIDS}), main .section :is(${GRIDS}) > *`)];
   const reveal = new IntersectionObserver(entries => {
     for (const e of entries) {

@@ -21,6 +21,7 @@
   --surface: #111311;
   --surface-2: #171917;
   --line: #292c28;
+  --field-line: #6b7068;  /* form field borders: ≥3:1 against fields and page (WCAG 1.4.11) */
   --fg: #f3f4ef;
   --muted: #a8ada4;
   --accent: #c8ff00;
@@ -432,7 +433,7 @@ h3 { font-size: var(--step-1); margin-bottom: var(--space-1); }
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
   list-style: none; padding: 0;
 }
-.card, .price-card, .panel, .cat-card, .contact-box {
+.card, .price-card, .panel, .contact-box {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -666,29 +667,6 @@ html.motion .network-ring:not(.is-future) { transform-box: fill-box; transform-o
 html.motion .price-grid.has-switch > .price-card:not(.is-active) { translate: 0 8px; }
 .price-note { max-width: 40rem; color: var(--muted); }
 
-/* ---------- print categories ---------- */
-.cat-grid {
-  display: grid; gap: var(--space-2); list-style: none; padding: 0;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));  /* two per row on phones */
-}
-.cat-card { transition: border-color 0.25s ease; }
-.cat-card:hover { border-color: var(--accent); }
-.cat-card svg {
-  width: 100%; height: auto; margin-bottom: var(--space-2);
-  fill: none; stroke: var(--muted); stroke-width: 1.2;
-  border: 1px solid var(--line); border-radius: 4px;
-  background-image: linear-gradient(var(--surface-2) 1px, transparent 1px), linear-gradient(90deg, var(--surface-2) 1px, transparent 1px);
-  background-size: 10px 10px;
-}
-.cat-card .hl { stroke: var(--accent); }
-.cat-card .dim { stroke: var(--accent); stroke-width: 0.8; opacity: 0.7; }
-.cat-card [class^="band-"] { stroke: none; }
-.cat-card .band-1 { fill: var(--accent); }
-.cat-card .band-2 { fill: var(--fg); }
-.cat-card .band-3 { fill: var(--muted); }
-.cat-card .band-4 { fill: var(--line); }
-.cat-card h3 { margin: 0; font-size: var(--step-0); }
-
 /* ---------- quote section note ---------- */
 .form-note { margin-top: var(--space-2); padding-left: 0.75rem; border-left: 2px solid var(--alert); color: var(--fg); font-size: var(--step--1); }
 
@@ -718,10 +696,10 @@ html.motion .reveal.is-in { opacity: 1; transform: none; }
 .form label { display: grid; gap: 0.35rem; font-size: var(--step--1); color: var(--muted); }
 :is(.form, .table) :is(input, select, textarea) {
   min-height: 44px; padding: 0.6rem 0.75rem; font: inherit; font-size: var(--step-0); color: var(--fg);
-  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--surface-2); border: 1px solid var(--field-line); border-radius: var(--radius);
 }
 :is(.form, .table) :is(input, select, textarea):focus-visible { border-color: var(--accent); outline-offset: 0; }
-:is(.form, .table) :is(input, select, textarea):hover { border-color: var(--muted); }
+:is(.form, .table) :is(input, select, textarea):hover { border-color: var(--fg); }
 /* dropdowns: same dark field + lime chevron everywhere; the open list uses the site colors too */
 :is(.form, .table) select {
   appearance: none; cursor: pointer; padding-right: 2.25rem;
@@ -769,6 +747,24 @@ button.btn { font: inherit; font-weight: 700; cursor: pointer; }
   border: 2px dashed var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer;
 }
 .drop:is(:hover, .over, :focus-within) { border-color: var(--accent); }
+.drop.has-file { min-height: 0; padding: 0.75rem 1rem; border-style: solid; justify-items: start; text-align: left; gap: 0.1rem; }
+.drop.has-file strong::before { content: "✓ "; color: var(--accent); }
+.quote { margin-block: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid rgb(200 255 0 / 0.45); border-radius: var(--radius); }
+.quote-label { font: 0.75rem var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.quote-price { font-size: var(--step-3); font-weight: 700; line-height: 1.2; color: var(--accent); }
+#quote-meta:empty { display: none; }
+.quote-price.is-empty { font-size: var(--step-0); font-weight: 400; color: var(--muted); }
+.quote-bar { display: none; }
+@media (max-width: 899.98px) {
+  .quote-bar:not([hidden]) {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+    display: flex; justify-content: space-between; align-items: center; gap: var(--space-2);
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+    background: var(--accent); color: var(--accent-ink); font-weight: 700; text-decoration: none;
+  }
+  .quote-bar span:first-child { font-size: var(--step-1); }
+  body:has(.quote-bar:not([hidden])) .site-footer { padding-bottom: 5rem; }
+}
 .swatch-row { display: flex; align-items: center; gap: 0.5rem; }
 .swatch-row select { flex: 1; min-width: 0; }
 .swatch { flex-shrink: 0; width: 1.4rem; height: 1.4rem; border-radius: 50%; border: 1px solid var(--muted); background: var(--surface-2); }

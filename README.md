@@ -113,13 +113,12 @@ Make sure it receives mail, ideally from an outside account, and that the old Gm
 3. Use **URL inspection** on `https://thetalab3d.shop/` and request indexing.
 
 ### 4. Portfolio photos
-"What we're built to print" (`#categories`) shows four print categories with line illustrations, because there are no
-photos of real finished prints yet. They are labelled as categories, not past projects. When you have photos:
+There are no photos of real finished prints yet; the Services cards (`#services`) use icons. When you have photos:
 - 3–6 photos of real prints you have permission to show, 1600×1200 px or larger, plain dark or neutral background, sharp focus
-- ideally one per category: an engineering prototype, a replacement component, a multicolor sign or label, an architecture/display model
+- ideally one per service: a prototype, a custom part, a multicolor print, a display model
 - one sentence per photo: what it is, material, colors (this becomes the alt text)
 
-Convert them to WebP, save them in `assets/work/`, and add them to `#categories` as
+Convert them to WebP, save them in `assets/work/`, and add them to the matching Services card (`#services`) as
 `<img src="assets/work/NAME.webp" alt="..." width="1600" height="1200" loading="lazy" decoding="async">`.
 
 ### 5. Privacy and terms: review required

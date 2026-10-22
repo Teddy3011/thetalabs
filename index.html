@@ -118,11 +118,11 @@
         <li><a href="login.html" data-auth-link>Login</a></li>
       </ul>
       <div class="nav-extra">
-        <a class="btn" href="#contact">Request a Quote</a>
+        <a class="btn" href="estimate.html">Get an Estimate</a>
         <a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a>
       </div>
     </nav>
-    <a class="btn btn-sm header-cta" href="#contact"><span class="cta-long">Request a&nbsp;</span>Quote</a>
+    <a class="btn btn-sm header-cta" href="estimate.html"><span class="cta-long">Get an&nbsp;</span>Estimate</a>
     <!-- Staggered off-canvas menu (JS only). Without JS the nav above stays a plain link list. -->
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
       <span class="menu-toggle-text" aria-hidden="true"><span class="menu-toggle-lines"><span>Menu</span></span></span>
@@ -246,9 +246,84 @@
     </div>
   </section>
 
+  <section class="section" id="pricing" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <p class="eyebrow">03 / Pricing</p>
+      <h2 id="pricing-title">Clear starting prices.</h2>
+      <!-- Shown by script.js. Without JS both markets are listed side by side. -->
+      <div class="market-switch" role="group" aria-label="Pricing market" hidden>
+        <button type="button" data-market="us" aria-pressed="true">United States</button>
+        <button type="button" data-market="in" aria-pressed="false">India</button>
+      </div>
+      <div class="price-grid">
+        <article class="price-card" data-market="us" aria-labelledby="price-us">
+          <h3 id="price-us"><span class="flag" aria-hidden="true">US</span> United States <span class="currency">USD</span></h3>
+          <p class="price-main">$1–2 <span>per gram, PLA</span></p>
+          <dl>
+            <div><dt>Minimum order</dt><dd>$15</dd></div>
+            <div><dt>Multicolor upgrade</dt><dd>+$5</dd></div>
+            <div><dt>PETG / TPU</dt><dd>+20% / +50%</dd></div>
+            <div><dt>Rush, ready in 24 hours</dt><dd>+25%, confirmed first</dd></div>
+          </dl>
+        </article>
+        <article class="price-card" data-market="in" aria-labelledby="price-in">
+          <h3 id="price-in"><span class="flag" aria-hidden="true">IN</span> India <span class="currency">INR</span></h3>
+          <p class="price-main">₹6–8 <span>per gram, PLA</span></p>
+          <dl>
+            <div><dt>Minimum order</dt><dd>₹300</dd></div>
+            <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
+            <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
+          </dl>
+        </article>
+      </div>
+      <p class="price-note">Final pricing depends on geometry, material use, print time, supports, finishing, and quantity. You approve the final quote before printing begins.</p>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-title">
+    <div class="wrap narrow">
+      <p class="eyebrow">04 / FAQ</p>
+      <h2 id="faq-title">Frequently asked questions</h2>
+      <div class="faq">
+        <details>
+          <summary>What should I include in a quote request?</summary>
+          <p>Your design file (STL or 3MF) or a sketch, photo or description, plus quantity, approximate dimensions, colors, your deadline, and whether you'd like pickup or delivery.</p>
+        </details>
+        <details>
+          <summary>What material do you currently print?</summary>
+          <p>PLA for most parts, PETG when you need something tougher or heat resistant, and TPU for flexible, rubber-like parts. PETG costs about 20% more per gram than PLA, and TPU about 50% more. Need something else? Ask in your request.</p>
+        </details>
+        <details>
+          <summary>Can you print in multiple colors?</summary>
+          <p>Yes, up to four colors in a single print. The multicolor upgrade is +$5 in the US or +₹150 in India.</p>
+        </details>
+        <details>
+          <summary>How quickly can I receive a part?</summary>
+          <!-- OWNER-INPUT: confirm typical turnaround -->
+          <p>Most small parts are ready in 2–4 days. Larger or multi-part orders take longer, and your quote includes a ready date. Need it within 24 hours? Rush costs 25% more, and we confirm before printing that we can make it.</p>
+        </details>
+        <details>
+          <summary>Where do I pick up my order?</summary>
+          <!-- OWNER-INPUT: confirm pickup area -->
+          <p>Pickup is near ASU's Tempe campus, by appointment. When your part is ready we email you the exact spot and agree a time. Local delivery around Tempe can also be arranged.</p>
+        </details>
+        <details>
+          <summary>Do you ship orders?</summary>
+          <!-- OWNER-INPUT: confirm whether shipping is offered, and where. -->
+          <p>Orders are currently fulfilled locally in Tempe, by pickup or local delivery. If you need shipping, ask in your request and we'll let you know what's possible.</p>
+        </details>
+        <details>
+          <summary>What if I don't have a finished CAD file?</summary>
+          <!-- OWNER-INPUT: confirm whether you offer design/modelling help, and how it is priced. -->
+          <p>Send a sketch, photo, measurements or a short description of what the part needs to do. We'll review it and tell you what's needed to get it printed.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
   <section class="section" id="built-local" aria-labelledby="built-title">
     <div class="wrap">
-      <p class="eyebrow">03 / Built Local</p>
+      <p class="eyebrow">05 / Built Local</p>
       <h2 id="built-title">One printer today. A nearby network tomorrow.</h2>
       <div class="split">
         <article class="panel panel-today" aria-labelledby="today-title">
@@ -293,108 +368,6 @@
             <figcaption>Network vision · illustrative only, not live data</figcaption>
           </figure>
         </article>
-      </div>
-    </div>
-  </section>
-
-  <section class="section" id="pricing" aria-labelledby="pricing-title">
-    <div class="wrap">
-      <p class="eyebrow">04 / Pricing</p>
-      <h2 id="pricing-title">Clear starting prices.</h2>
-      <!-- Shown by script.js. Without JS both markets are listed side by side. -->
-      <div class="market-switch" role="group" aria-label="Pricing market" hidden>
-        <button type="button" data-market="us" aria-pressed="true">United States</button>
-        <button type="button" data-market="in" aria-pressed="false">India</button>
-      </div>
-      <div class="price-grid">
-        <article class="price-card" data-market="us" aria-labelledby="price-us">
-          <h3 id="price-us"><span class="flag" aria-hidden="true">US</span> United States <span class="currency">USD</span></h3>
-          <p class="price-main">$1–2 <span>per gram, PLA</span></p>
-          <dl>
-            <div><dt>Minimum order</dt><dd>$15</dd></div>
-            <div><dt>Multicolor upgrade</dt><dd>+$5</dd></div>
-            <div><dt>PETG / TPU</dt><dd>+20% / +50%</dd></div>
-            <div><dt>Rush, ready in 24 hours</dt><dd>+25%, confirmed first</dd></div>
-          </dl>
-        </article>
-        <article class="price-card" data-market="in" aria-labelledby="price-in">
-          <h3 id="price-in"><span class="flag" aria-hidden="true">IN</span> India <span class="currency">INR</span></h3>
-          <p class="price-main">₹6–8 <span>per gram, PLA</span></p>
-          <dl>
-            <div><dt>Minimum order</dt><dd>₹300</dd></div>
-            <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
-            <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
-          </dl>
-        </article>
-      </div>
-      <p class="price-note">Final pricing depends on geometry, material use, print time, supports, finishing, and quantity. You approve the final quote before printing begins.</p>
-    </div>
-  </section>
-
-  <section class="section" id="categories" aria-labelledby="categories-title">
-    <div class="wrap">
-      <p class="eyebrow">Print categories</p>
-      <h2 id="categories-title">What we’re built to print</h2>
-      <p class="section-lead">These are the kinds of jobs the printer is set up for. They're categories, not past client projects.</p>
-      <!-- OWNER-INPUT: once real photos exist, replace or extend these with a photo grid (see README.md, "Portfolio photos"). -->
-      <ul class="cat-grid">
-        <li class="cat-card">
-          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><rect x="45" y="18" width="70" height="44"/><path class="hl" d="M45 18 60 8h70l-15 10M130 8v44l-15 10"/><path class="dim" d="M45 74h70M45 70v8M115 70v8M135 18v44M131 18h8M131 62h8"/></svg>
-          <h3>Engineering prototypes</h3>
-        </li>
-        <li class="cat-card">
-          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><path d="M40 20h30v34h50v18H40z"/><circle class="hl" cx="55" cy="35" r="5"/><circle class="hl" cx="105" cy="63" r="5"/><path class="dim" d="M55 26v18M46 35h18M105 54v18M96 63h18"/></svg>
-          <h3>Replacement components</h3>
-        </li>
-        <li class="cat-card">
-          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><rect x="30" y="20" width="100" height="50"/><rect class="band-1" x="30" y="20" width="25" height="50"/><rect class="band-2" x="55" y="20" width="25" height="50"/><rect class="band-3" x="80" y="20" width="25" height="50"/><rect class="band-4" x="105" y="20" width="25" height="50"/></svg>
-          <h3>Multicolor signs and labels</h3>
-        </li>
-        <li class="cat-card">
-          <svg viewBox="0 0 160 90" aria-hidden="true" focusable="false"><path d="M30 76h100M40 76V40l20-12v48M60 76V24l30 10v42M90 76V48l25-8v36"/><path class="hl" d="M68 40h14M68 50h14M68 60h14"/></svg>
-          <h3>Architecture and display models</h3>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section" id="faq" aria-labelledby="faq-title">
-    <div class="wrap narrow">
-      <p class="eyebrow">05 / FAQ</p>
-      <h2 id="faq-title">Frequently asked questions</h2>
-      <div class="faq">
-        <details>
-          <summary>What should I include in a quote request?</summary>
-          <p>Your design file (STL or 3MF) or a sketch, photo or description, plus quantity, approximate dimensions, colors, your deadline, and whether you'd like pickup or delivery.</p>
-        </details>
-        <details>
-          <summary>What material do you currently print?</summary>
-          <p>PLA for most parts, PETG when you need something tougher or heat resistant, and TPU for flexible, rubber-like parts. PETG costs about 20% more per gram than PLA, and TPU about 50% more. Need something else? Ask in your request.</p>
-        </details>
-        <details>
-          <summary>Can you print in multiple colors?</summary>
-          <p>Yes, up to four colors in a single print. The multicolor upgrade is +$5 in the US or +₹150 in India.</p>
-        </details>
-        <details>
-          <summary>How quickly can I receive a part?</summary>
-          <!-- OWNER-INPUT: confirm typical turnaround -->
-          <p>Most small parts are ready in 2–4 days. Larger or multi-part orders take longer, and your quote includes a ready date. Need it within 24 hours? Rush costs 25% more, and we confirm before printing that we can make it.</p>
-        </details>
-        <details>
-          <summary>Where do I pick up my order?</summary>
-          <!-- OWNER-INPUT: confirm pickup area -->
-          <p>Pickup is near ASU's Tempe campus, by appointment. When your part is ready we email you the exact spot and agree a time. Local delivery around Tempe can also be arranged.</p>
-        </details>
-        <details>
-          <summary>Do you ship orders?</summary>
-          <!-- OWNER-INPUT: confirm whether shipping is offered, and where. -->
-          <p>Orders are currently fulfilled locally in Tempe, by pickup or local delivery. If you need shipping, ask in your request and we'll let you know what's possible.</p>
-        </details>
-        <details>
-          <summary>What if I don't have a finished CAD file?</summary>
-          <!-- OWNER-INPUT: confirm whether you offer design/modelling help, and how it is priced. -->
-          <p>Send a sketch, photo, measurements or a short description of what the part needs to do. We'll review it and tell you what's needed to get it printed.</p>
-        </details>
       </div>
     </div>
   </section>

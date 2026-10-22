@@ -44,7 +44,12 @@
           <strong>Choose or drop an .stl file</strong>
           <span class="small">Up to 50 MB · .stl from any CAD or 3D app</span>
         </label>
-        <p class="small">No STL file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
+        <div class="quote" aria-live="polite">
+          <p class="quote-label">Your estimate</p>
+          <p class="quote-price" id="quote-price">Upload a file to see your price</p>
+          <p class="small" id="quote-meta"></p>
+        </div>
+        <p class="small" id="nostl">No STL file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
         <canvas class="viewer" id="viewer" hidden aria-label="3D preview of your part. Drag to rotate."></canvas>
         <dl class="stats" id="geo" hidden></dl>
       </div>
@@ -111,6 +116,8 @@
   </div>
 </main>
 
+<a class="quote-bar" id="quote-bar" href="#place" hidden><span id="quote-bar-price"></span><span>Review &amp; order ↓</span></a>
+
 <footer class="site-footer">
   <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
 </footer>
@@ -173,9 +180,17 @@ function render() {
   $('#rush-pct').textContent = +s.rush_pct;
   swatches();
   $('#place').disabled = $('#copy').disabled = !geo;
-  if (!geo) { $('#price').innerHTML = ''; return; }
+  $('#quote-bar').hidden = !geo;
+  $('#quote-price').classList.toggle('is-empty', !geo);
+  if (!geo) {
+    $('#price').innerHTML = $('#quote-meta').textContent = '';
+    $('#quote-price').textContent = 'Upload a file to see your price';
+    return;
+  }
   const grams = estimateWeight(geo, o.infill, m.density);
   const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
+  $('#quote-price').textContent = $('#quote-bar-price').textContent = range(lo, hi, s.currency);
+  $('#quote-meta').textContent = `${o.quantity} × ${grams} g · ${geo.size.map(Math.round).join(' × ')} mm · ${m.name.split(' ')[0]} · ${o.color_choices.join(', ')}`;
   $('#price').innerHTML = `
     <div><dt>Weight per part</dt><dd>${grams} g</dd></div>
     <div><dt>Total ${esc(m.name.split(' ')[0])}</dt><dd>${Math.round(grams * o.quantity * 10) / 10} g</dd></div>
@@ -198,6 +213,10 @@ async function load(f) {
     geo = measure(verts);
     if (!(geo.volume > 0)) throw new Error('This STL has no volume. Is the mesh closed?');
     file = f;
+    $('#drop').classList.add('has-file');
+    $('#drop strong').textContent = f.name;
+    $('#drop .small').textContent = 'Choose or drop another file to replace it';
+    $('#nostl').hidden = true;
     const big = geo.size.some(d => d > BED_MM);
     $('#geo').hidden = false;
     $('#geo').innerHTML = `
