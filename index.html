@@ -272,13 +272,22 @@
             <li>Distributed on-demand fulfillment</li>
           </ul>
           <figure class="network">
-            <svg viewBox="0 0 320 120" aria-hidden="true" focusable="false">
-              <path class="network-base" d="M40 86C110 6 210 6 280 86"/>
-              <path class="network-draw" d="M40 86C110 6 210 6 280 86" pathLength="1"/>
-              <circle class="network-node" cx="40" cy="86" r="5"/>
-              <circle class="network-node is-future" cx="280" cy="86" r="5"/>
-              <text x="40" y="110" text-anchor="middle">TEMPE</text>
-              <text x="280" y="110" text-anchor="middle">HYDERABAD</text>
+            <svg viewBox="0 0 320 156" aria-hidden="true" focusable="false">
+              <defs><pattern id="net-grid" width="16" height="16" patternUnits="userSpaceOnUse"><path class="network-grid" d="M16 0H0V16"/></pattern></defs>
+              <rect width="320" height="156" fill="url(#net-grid)"/>
+              <path class="network-base" d="M56 92C116 22 204 22 264 92"/>
+              <path class="network-draw" d="M56 92C116 22 204 22 264 92" pathLength="1"/>
+              <text class="network-meta" x="160" y="34" text-anchor="middle">≈ 14,300 KM</text>
+              <text class="network-status" x="56" y="70" text-anchor="middle">LIVE</text>
+              <circle class="network-ring" cx="56" cy="92" r="9"/>
+              <circle class="network-node" cx="56" cy="92" r="4"/>
+              <text class="network-city" x="56" y="120" text-anchor="middle">Tempe, AZ</text>
+              <text class="network-meta" x="56" y="134" text-anchor="middle">33.43°N 111.94°W</text>
+              <text class="network-status is-future" x="264" y="70" text-anchor="middle">PLANNED</text>
+              <circle class="network-ring is-future" cx="264" cy="92" r="9"/>
+              <circle class="network-node is-future" cx="264" cy="92" r="4"/>
+              <text class="network-city" x="264" y="120" text-anchor="middle">Hyderabad, IN</text>
+              <text class="network-meta" x="264" y="134" text-anchor="middle">17.39°N 78.49°E</text>
             </svg>
             <figcaption>Network vision · illustrative only, not live data</figcaption>
           </figure>
