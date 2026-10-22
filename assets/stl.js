@@ -73,9 +73,9 @@ export const DEFAULT_SETTINGS = {
 };
 
 export const DEFAULT_MATERIALS = [
-  { id: 'pla', name: 'PLA (standard)', density: 1.24, price_factor: 1 },
+  { id: 'pla', name: 'PLA (standard, most parts)', density: 1.24, price_factor: 1 },
   { id: 'petg', name: 'PETG (tougher, heat resistant)', density: 1.27, price_factor: 1.2 },
-  { id: 'tpu', name: 'TPU 95A (flexible)', density: 1.21, price_factor: 1.5 },
+  { id: 'tpu', name: 'TPU (flexible, rubber-like)', density: 1.21, price_factor: 1.5 },
 ];
 
 // Same list as the color_choices check in supabase/002_materials_colors.sql.

@@ -61,11 +61,11 @@ function render(o) {
       <div><dt>Size</dt><dd>${sizeText(o)}</dd></div>
       <div><dt>Material</dt><dd>${materialText(o)}</dd></div>
       <div><dt>Colors</dt><dd>${esc(colorText(o))}</dd></div>
-      <div><dt>Infill</dt><dd>${o.infill}%${o.rush ? ' · rush' : ''}</dd></div>
+      <div><dt>Strength</dt><dd>${o.infill}% infill${o.rush ? ' · rush' : ''}</dd></div>
       <div><dt>${o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}</dt><dd>${esc(o.city)} ${esc(o.zip || '')}</dd></div>
       <div class="total"><dt>Estimate</dt><dd>${priceText(o)}</dd></div>
     </dl>
-    <p class="small">We confirm the final price by email. You pay on pickup or by invoice. This page updates live.</p>`;
+    <p class="small">We confirm the final price by email. You pay on pickup or by invoice. When it's ready we email you the pickup spot near ASU's Tempe campus. This page updates live.</p>`;
 }
 
 if (requireConfig($('#gate'))) {

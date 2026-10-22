@@ -7,7 +7,7 @@ export const sb = configured ? window.supabase.createClient(SUPABASE_URL, SUPABA
 export const $ = s => document.querySelector(s);
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 export const money = (n, cur) => new Intl.NumberFormat(cur === 'INR' ? 'en-IN' : 'en-US',
-  { style: 'currency', currency: cur || 'USD', maximumFractionDigits: 2 }).format(n);
+  { style: 'currency', currency: cur || 'USD', minimumFractionDigits: cur === 'INR' ? 0 : 2, maximumFractionDigits: cur === 'INR' ? 0 : 2 }).format(n);
 export const range = (lo, hi, cur) => lo === hi ? money(lo, cur) : `${money(lo, cur)}–${money(hi, cur)}`;
 export const priceText = o => range(+o.price_low, +o.price_high, o.currency);
 export const sizeText = o => [o.size_x, o.size_y, o.size_z].map(n => Math.round(n)).join(' × ') + ' mm';

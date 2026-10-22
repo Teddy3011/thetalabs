@@ -42,7 +42,7 @@
         <label class="drop" id="drop">
           <input type="file" id="file" accept=".stl" class="sr-only">
           <strong>Choose or drop an .stl file</strong>
-          <span class="small">Up to 50 MB · binary or ASCII STL</span>
+          <span class="small">Up to 50 MB · .stl from any CAD or 3D app</span>
         </label>
         <p class="small">No STL file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
         <canvas class="viewer" id="viewer" hidden aria-label="3D preview of your part. Drag to rotate."></canvas>
@@ -69,18 +69,18 @@
               <option value="4">4 colors</option>
             </select>
           </label>
-          <label>Infill
+          <label>Strength
             <select name="infill">
-              <option value="10">10% (light)</option>
-              <option value="15" selected>15% (standard)</option>
-              <option value="25">25%</option>
-              <option value="50">50% (strong)</option>
-              <option value="100">100% (solid)</option>
+              <option value="10">Light: display pieces</option>
+              <option value="15" selected>Standard: most parts</option>
+              <option value="25">Sturdy: everyday use</option>
+              <option value="50">Strong: carries load</option>
+              <option value="100">Solid: maximum strength</option>
             </select>
           </label>
         </div>
         <div class="row" id="color-picks"></div>
-        <label class="check"><input type="checkbox" name="rush"> <span>Rush, under 24 hours (+<span id="rush-pct">25</span>%, when accepted)</span></label>
+        <label class="check"><input type="checkbox" name="rush"> <span>Rush: ready within 24 hours (+<span id="rush-pct">25</span>%). We confirm before printing that we can make it.</span></label>
 
         <dl class="stats" id="price"></dl>
 
@@ -97,8 +97,13 @@
             <label>ZIP / PIN <input name="zip" maxlength="12"></label>
           </div>
           <label>Notes <textarea name="notes" rows="3" maxlength="1000" placeholder="Colors, deadline, anything else"></textarea></label>
-          <p class="small">Payment: we confirm the final price by email and you pay on pickup or by invoice. No card needed now.</p>
-          <button class="btn" type="submit" id="place" disabled>Place order request</button>
+          <!-- OWNER-INPUT: confirm turnaround and pickup area -->
+          <p class="small">Most small parts are ready in 2–4 days. Pickup is near ASU's Tempe campus by appointment, or we can deliver locally.
+            We confirm the final price by email and you pay on pickup or by invoice. No card needed now.</p>
+          <div class="cta-row">
+            <button class="btn" type="submit" id="place" disabled>Place order request</button>
+            <button class="btn btn-ghost" type="button" id="copy" hidden disabled>Copy estimate</button>
+          </div>
           <p class="msg" id="msg" role="status"></p>
         </fieldset>
       </form>
@@ -167,7 +172,7 @@ function render() {
   const o = opts(), s = settings[o.region], m = material();
   $('#rush-pct').textContent = +s.rush_pct;
   swatches();
-  $('#place').disabled = !geo;
+  $('#place').disabled = $('#copy').disabled = !geo;
   if (!geo) { $('#price').innerHTML = ''; return; }
   const grams = estimateWeight(geo, o.infill, m.density);
   const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
@@ -269,22 +274,37 @@ function viewer(canvas, v, g) {
 }
 
 // Until online ordering is live, the button opens an email with the estimate filled in.
-if (!configured) $('#place').textContent = 'Email this estimate';
-function emailEstimate() {
+// Copy is the fallback for people whose browser has no email app set up.
+if (!configured) {
+  $('#place').textContent = 'Email this estimate';
+  $('#copy').hidden = false;
+}
+$('#copy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText('To: info@thetalab3d.shop\n\n' + estimateText());
+    msg($('#msg'), 'Copied. Paste it into an email to info@thetalab3d.shop and attach your STL file.');
+  } catch {
+    msg($('#msg'), 'Your browser blocked copying. Email info@thetalab3d.shop with your file and the options above.', true);
+  }
+});
+function estimateText() {
   const o = opts(), s = settings[o.region], m = material();
   const grams = estimateWeight(geo, o.infill, m.density);
   const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
-  const body = [
+  return [
     `File: ${file.name} (I'll attach it to this email)`,
     `Size: ${geo.size.map(d => d.toFixed(1)).join(' x ')} mm`,
-    `Material: ${m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Infill: ${o.infill}%`,
+    `Material: ${m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Strength: ${form.infill.selectedOptions[0].text} (${o.infill}% infill)`,
     `Quantity: ${o.quantity}`, `Rush: ${o.rush ? 'yes' : 'no'}`,
     `Estimated weight: ${grams} g per part`, `Website estimate: ${range(lo, hi, s.currency)}`,
-    `${form.fulfillment.value === 'delivery' ? 'Delivery' : 'Pickup'}: ${form.city.value} ${form.zip.value}`,
+    `${form.fulfillment.value === 'delivery' ? 'Delivery' : 'Pickup'}: ${`${form.city.value} ${form.zip.value}`.trim() || 'Tempe'}`,
     form.notes.value && `Notes: ${form.notes.value}`,
   ].filter(Boolean).join('\n');
+}
+function emailEstimate() {
+  const body = estimateText();
   location.href = 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
-  msg($('#msg'), 'Your email app should open with the details filled in. Remember to attach the STL file.');
+  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file. Nothing opened? Use Copy estimate and paste it into an email.');
 }
 
 form.addEventListener('submit', async e => {

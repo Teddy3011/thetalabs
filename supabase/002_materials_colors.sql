@@ -10,9 +10,9 @@ create table public.materials (
   sort         int not null default 0
 );
 insert into public.materials values
-  ('pla',  'PLA (standard)', 1.24, 1.0, true, 1),
+  ('pla',  'PLA (standard, most parts)', 1.24, 1.0, true, 1),
   ('petg', 'PETG (tougher, heat resistant)', 1.27, 1.2, true, 2),
-  ('tpu',  'TPU 95A (flexible)', 1.21, 1.5, true, 3);
+  ('tpu',  'TPU (flexible, rubber-like)', 1.21, 1.5, true, 3);
 
 alter table public.materials enable row level security;
 create policy "materials readable by all" on public.materials for select using (true);
