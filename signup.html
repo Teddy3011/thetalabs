@@ -24,7 +24,7 @@
       <ul>
         <li><a href="estimate.html">Estimate</a></li>
         <li><a href="printers.html">Printers</a></li>
-        <li><a href="login.html" data-auth-link>Login</a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
       </ul>
     </nav>
   </div>
@@ -35,7 +35,7 @@
     <p class="eyebrow">Account</p>
     <h1>Create an account</h1>
     <div id="gate"></div>
-    <form class="form" id="signup">
+    <form class="form" id="signup" method="post" action="#">
       <fieldset>
         <legend>I want to</legend>
         <label class="check"><input type="radio" name="role" value="customer" checked> Order prints</label>

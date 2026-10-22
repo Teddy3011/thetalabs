@@ -24,7 +24,7 @@
       <ul>
         <li><a href="estimate.html">Estimate</a></li>
         <li><a href="printers.html">Printers</a></li>
-        <li><a href="login.html" data-auth-link aria-current="page">Login</a></li>
+        <li hidden><a href="login.html" data-auth-link aria-current="page">Login</a></li>
       </ul>
     </nav>
   </div>
@@ -35,7 +35,7 @@
     <p class="eyebrow">Account</p>
     <h1>Log in</h1>
     <div id="gate"></div>
-    <form class="form" id="login">
+    <form class="form" id="login" method="post" action="#">
       <label>Email <input type="email" name="email" autocomplete="email" required></label>
       <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
       <div class="cta-row">
@@ -45,7 +45,7 @@
       <p class="msg" id="msg" role="status"></p>
       <p class="small">New here? <a href="signup.html">Create an account</a> as a customer or a printer owner.</p>
     </form>
-    <form class="form" id="reset" hidden>
+    <form class="form" id="reset" method="post" action="#" hidden>
       <label>New password <input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
       <button class="btn" type="submit">Set new password</button>
       <p class="msg" id="reset-msg" role="status"></p>

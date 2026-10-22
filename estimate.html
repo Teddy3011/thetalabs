@@ -25,7 +25,7 @@
       <ul>
         <li><a href="estimate.html" aria-current="page">Estimate</a></li>
         <li><a href="printers.html">Printers</a></li>
-        <li><a href="login.html" data-auth-link>Login</a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
       </ul>
     </nav>
   </div>
@@ -44,6 +44,7 @@
           <strong>Choose or drop an .stl file</strong>
           <span class="small">Up to 50 MB · .stl from any CAD or 3D app</span>
         </label>
+        <p class="msg err" id="file-msg" role="alert"></p>
         <div class="quote" aria-live="polite">
           <p class="quote-label">Your estimate</p>
           <p class="quote-price" id="quote-price">Upload a file to see your price</p>
@@ -204,10 +205,22 @@ function render() {
 form.addEventListener('input', render);
 render();
 
+// File problems show under the upload box and clear the previous part, so no stale price stays on screen.
+function fileError(text) {
+  geo = file = null;
+  $('#drop').classList.remove('has-file');
+  $('#drop strong').textContent = 'Choose or drop an .stl file';
+  $('#drop .small').textContent = 'Up to 50 MB · .stl from any CAD or 3D app';
+  $('#nostl').hidden = false;
+  $('#viewer').hidden = $('#geo').hidden = true;
+  msg($('#file-msg'), text, true);
+  render();
+}
+
 async function load(f) {
-  msg($('#msg'), '');
-  if (!/\.stl$/i.test(f.name)) return msg($('#msg'), 'Please choose an .stl file.', true);
-  if (f.size > MAX_BYTES) return msg($('#msg'), 'That file is over 50 MB. Email it to us instead.', true);
+  msg($('#file-msg'), '');
+  if (!/\.stl$/i.test(f.name)) return fileError(`"${f.name}" isn't an .stl file. Export your model as STL and try again.`);
+  if (f.size > MAX_BYTES) return fileError('That file is over 50 MB. Email it to info@thetalab3d.shop instead.');
   try {
     const verts = parseSTL(await f.arrayBuffer());
     geo = measure(verts);
@@ -227,11 +240,10 @@ async function load(f) {
       <div><dt>Triangles</dt><dd>${geo.triangles.toLocaleString()}</dd></div>
       ${big ? `<div><dt>Note</dt><dd>Larger than a ${BED_MM} mm bed. We'll confirm if it can be split.</dd></div>` : ''}`;
     viewer($('#viewer'), verts, geo);
+    render();
   } catch (e) {
-    geo = file = null;
-    msg($('#msg'), e.message, true);
+    fileError(e.message);
   }
-  render();
 }
 
 $('#file').addEventListener('change', e => e.target.files[0] && load(e.target.files[0]));

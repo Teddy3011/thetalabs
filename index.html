@@ -55,6 +55,11 @@
 </script>
 <link rel="preload" as="image" href="assets/printer-frame.webp" type="image/webp">
 <script src="assets/script.js" defer></script>
+<script type="module">
+// Show the Login/Account menu item only once accounts are live (assets/config.js has real Supabase values).
+import { SUPABASE_URL } from './assets/config.js';
+if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('[data-auth-link]')) a.parentElement.hidden = false;
+</script>
 
 <!-- OWNER-INPUT: add "founder": { "@type": "Person", "name": "..." } once the founder's public name is confirmed. -->
 <script type="application/ld+json">
@@ -115,7 +120,7 @@
         <li><a href="#faq">FAQ</a></li>
         <li><a href="estimate.html">Instant estimate</a></li>
         <li><a href="printers.html">For printer owners</a></li>
-        <li><a href="login.html" data-auth-link>Login</a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
       </ul>
       <div class="nav-extra">
         <a class="btn" href="estimate.html">Get an Estimate</a>
@@ -388,9 +393,8 @@
         </ul>
         <div class="cta-row">
           <a class="btn" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email project details <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
-          <a class="btn btn-ghost" href="https://docs.google.com/forms/d/e/1FAIpQLSdZtJzpyyiV7DDe4wMCtMdJu2ph_InQLu2EuqbfPdKPt7cqrQ/viewform?usp=publish-editor" target="_blank" rel="noopener">Use the detailed quote form<span class="sr-only"> (opens in a new tab)</span></a>
+          <a class="btn btn-ghost" href="estimate.html">Get an instant estimate</a>
         </div>
-        <p class="form-note">The Google form may ask you to sign in. Email is available as a no-form fallback.</p>
       </div>
     </div>
   </section>

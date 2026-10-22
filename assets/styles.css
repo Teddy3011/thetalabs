@@ -667,8 +667,6 @@ html.motion .network-ring:not(.is-future) { transform-box: fill-box; transform-o
 html.motion .price-grid.has-switch > .price-card:not(.is-active) { translate: 0 8px; }
 .price-note { max-width: 40rem; color: var(--muted); }
 
-/* ---------- quote section note ---------- */
-.form-note { margin-top: var(--space-2); padding-left: 0.75rem; border-left: 2px solid var(--alert); color: var(--fg); font-size: var(--step--1); }
 
 /* ---------- footer ---------- */
 .site-footer { border-top: 1px solid var(--line); padding-block: var(--space-4) var(--space-3); color: var(--muted); }
@@ -747,6 +745,7 @@ button.btn { font: inherit; font-weight: 700; cursor: pointer; }
   border: 2px dashed var(--line); border-radius: var(--radius); background: var(--surface); cursor: pointer;
 }
 .drop:is(:hover, .over, :focus-within) { border-color: var(--accent); }
+#file-msg { margin-top: var(--space-1); }
 .drop.has-file { min-height: 0; padding: 0.75rem 1rem; border-style: solid; justify-items: start; text-align: left; gap: 0.1rem; }
 .drop.has-file strong::before { content: "✓ "; color: var(--accent); }
 .quote { margin-block: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface); border: 1px solid rgb(200 255 0 / 0.45); border-radius: var(--radius); }

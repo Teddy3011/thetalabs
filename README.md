@@ -8,7 +8,7 @@ index.html               the whole landing page (works without JavaScript)
 privacy.html, terms.html legal pages (need owner/legal review, see below)
 site.html                redirect stub for the old iframe URL
 robots.txt, sitemap.xml
-site.config.json         current values of business name, email, form URL, prices, …
+site.config.json         current values of business name, email, prices, turnaround, pickup area, …
 scripts/set-config.mjs   changes one of those values everywhere (optional helper, never deployed logic)
 assets/styles.css        all styles (colour/type/spacing tokens at the top)
 assets/script.js         all enhancements: menu, intro, pricing switch, reveals, parallax, label decrypt
@@ -65,21 +65,20 @@ animations on a computer that has reduced motion / Windows "Animation effects" t
 
 Commit and push to the branch GitHub Pages serves. Keep `CNAME` as is. No build, package install or workflow is needed.
 
-## Updating the email, quote-form URL or prices
+## Updating the email or prices
 
 `site.config.json` records each value that appears on the site. To change one everywhere:
 
 ```bash
 node scripts/set-config.mjs                       # list keys and current values
 node scripts/set-config.mjs email new-address@thetalab3d.shop
-node scripts/set-config.mjs quoteFormUrl "https://forms.gle/..."
 node scripts/set-config.mjs priceUSMinimum '$20'
 ```
 
 The script does a literal find-and-replace across the root `.html`, `.xml` and `.txt` files, prints how many
 replacements it made per file, then updates `site.config.json`. Check the result with `git diff`.
 It needs Node 18+ on your computer. Without Node, search the HTML files for the old value and replace it by hand:
-the email is in `index.html`, `privacy.html` and `terms.html`; the form URL and prices are in `index.html` (`#pricing`, `#faq`, `#contact`).
+the email is in `index.html`, `privacy.html` and `terms.html`; prices are in `index.html` (`#pricing`, `#faq`); turnaround and pickup area are in `index.html`, `estimate.html` and `track.html`.
 
 Not covered by the script: the text baked into `assets/og-image.png` (regenerate it if the name or headline changes).
 
@@ -87,21 +86,10 @@ Not covered by the script: the text baked into `assets/og-image.png` (regenerate
 
 Search the HTML for `OWNER-INPUT` to find every spot that needs a decision.
 
-### 1. Google Form sign-in restriction (critical)
-Signed out, the current Google Form returns HTTP 401 and a Google sign-in page (tested 2026-10-03).
-The site says so next to the form button, and email is the primary call to action.
-The usual causes are a **File upload** question (Google always requires sign-in for uploads), or the
-*Restrict to users in [organisation]* / *Collect email addresses: Verified* settings.
-
-Fix it in Google Forms (**Settings → Responses**):
-1. Delete any **File upload** question. Ask people to email their STL/3MF files instead.
-2. Turn off *Restrict to users in …* and set *Collect email addresses* to **Responder input** (not *Verified*).
-3. Turn off *Limit to 1 response*, which also forces sign-in.
-4. Test the form in a private/incognito window.
-5. Once it opens without sign-in, delete the "The Google form may ask you to sign in…" note in `index.html` (`#contact`).
-
-If you need anonymous file uploads, move the form to a service that supports them (for example Tally or Jotform),
-then run `node scripts/set-config.mjs quoteFormUrl "<new url>"`.
+### 1. Quote form
+The Google Form link was removed on 2026-10-22: signed out, it returned HTTP 401 (a Google sign-in page).
+The estimate page and email are the ways to order. If you bring back a form, use one that allows anonymous
+file uploads (for example Tally or Jotform) and add it to `#contact` in `index.html`.
 
 ### 2. Branded email
 The site uses `info@thetalab3d.shop` (switched from the Gmail address on 2026-10-03).

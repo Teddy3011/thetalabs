@@ -50,9 +50,10 @@ export async function requireUser() {
   return user;
 }
 
-// Nav: Login ↔ Account
+// Nav: Login ↔ Account, shown only once accounts are live
 getUser().then(user => {
   for (const a of document.querySelectorAll('[data-auth-link]')) {
+    a.parentElement.hidden = !configured;
     a.textContent = user ? 'Account' : 'Login';
     a.href = user ? 'account.html' : 'login.html';
   }
