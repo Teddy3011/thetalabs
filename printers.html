@@ -59,10 +59,11 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, money, date, sizeText, tag, materialText, colorText, msg, requireConfig, getUser, getProfile } from './assets/app.js';
+import { sb, configured, $, esc, money, date, sizeText, tag, materialText, colorText, msg, requireConfig, getUser, getProfile } from './assets/app.js';
 
 const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up / delivered'] };
 
+if (!configured) $('#intro .cta-row').hidden = true;  // nothing to apply to until accounts are live
 if (requireConfig($('#gate'))) {
   const user = await getUser();
   const profile = user && await getProfile(user);

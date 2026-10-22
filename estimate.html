@@ -44,6 +44,7 @@
           <strong>Choose or drop an .stl file</strong>
           <span class="small">Up to 50 MB · binary or ASCII STL</span>
         </label>
+        <p class="small">No STL file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
         <canvas class="viewer" id="viewer" hidden aria-label="3D preview of your part. Drag to rotate."></canvas>
         <dl class="stats" id="geo" hidden></dl>
       </div>
@@ -52,8 +53,8 @@
         <div class="row">
           <label>Region
             <select name="region">
-              <option value="US">United States (USD)</option>
-              <option value="IN">India (INR)</option>
+              <option value="US">United States</option>
+              <option value="IN">India</option>
             </select>
           </label>
           <label>Quantity <input type="number" name="quantity" min="1" max="50" value="1" required></label>
@@ -110,7 +111,7 @@
 </footer>
 
 <script type="module">
-import { sb, configured, $, esc, money, msg, getUser, getProfile } from './assets/app.js';
+import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
@@ -178,7 +179,7 @@ function render() {
     <div><dt>Minimum order</dt><dd>${money(s.minimum, s.currency)}</dd></div>
     ${o.colors > 1 ? `<div><dt>Multicolor</dt><dd>+${money(s.multicolor, s.currency)}</dd></div>` : ''}
     ${o.rush ? `<div><dt>Rush</dt><dd>+${+s.rush_pct}%</dd></div>` : ''}
-    <div class="total"><dt>Estimate</dt><dd>${money(lo, s.currency)}–${money(hi, s.currency)}</dd></div>`;
+    <div class="total"><dt>Estimate</dt><dd>${range(lo, hi, s.currency)}</dd></div>`;
 }
 form.addEventListener('input', render);
 render();
@@ -267,9 +268,28 @@ function viewer(canvas, v, g) {
   draw();
 }
 
+// Until online ordering is live, the button opens an email with the estimate filled in.
+if (!configured) $('#place').textContent = 'Email this estimate';
+function emailEstimate() {
+  const o = opts(), s = settings[o.region], m = material();
+  const grams = estimateWeight(geo, o.infill, m.density);
+  const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
+  const body = [
+    `File: ${file.name} (I'll attach it to this email)`,
+    `Size: ${geo.size.map(d => d.toFixed(1)).join(' x ')} mm`,
+    `Material: ${m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Infill: ${o.infill}%`,
+    `Quantity: ${o.quantity}`, `Rush: ${o.rush ? 'yes' : 'no'}`,
+    `Estimated weight: ${grams} g per part`, `Website estimate: ${range(lo, hi, s.currency)}`,
+    `${form.fulfillment.value === 'delivery' ? 'Delivery' : 'Pickup'}: ${form.city.value} ${form.zip.value}`,
+    form.notes.value && `Notes: ${form.notes.value}`,
+  ].filter(Boolean).join('\n');
+  location.href = 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
+  msg($('#msg'), 'Your email app should open with the details filled in. Remember to attach the STL file.');
+}
+
 form.addEventListener('submit', async e => {
   e.preventDefault();
-  if (!configured) return msg($('#msg'), 'Online ordering isn\'t live yet. Email info@thetalab3d.shop with your file and these options.', true);
+  if (!configured) return emailEstimate();
   if (!user) {
     $('#msg').innerHTML = 'Please <a href="login.html?next=estimate.html">log in</a> or <a href="signup.html">create an account</a> to place an order. You\'ll need to choose the file again afterwards.';
     return;

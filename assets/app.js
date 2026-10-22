@@ -8,7 +8,8 @@ export const $ = s => document.querySelector(s);
 export const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
 export const money = (n, cur) => new Intl.NumberFormat(cur === 'INR' ? 'en-IN' : 'en-US',
   { style: 'currency', currency: cur || 'USD', maximumFractionDigits: 2 }).format(n);
-export const priceText = o => `${money(o.price_low, o.currency)}–${money(o.price_high, o.currency)}`;
+export const range = (lo, hi, cur) => lo === hi ? money(lo, cur) : `${money(lo, cur)}–${money(hi, cur)}`;
+export const priceText = o => range(+o.price_low, +o.price_high, o.currency);
 export const sizeText = o => [o.size_x, o.size_y, o.size_z].map(n => Math.round(n)).join(' × ') + ' mm';
 export const materialText = o => (o.material || 'pla').toUpperCase();
 export const colorText = o => o.color_choices?.length ? o.color_choices.join(', ') : `${o.colors} color${o.colors > 1 ? 's' : ''}`;
