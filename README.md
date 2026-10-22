@@ -28,13 +28,15 @@ login.html, signup.html
 assets/config.js         Supabase project URL + anon key (public)
 assets/app.js            shared client code; assets/stl.js STL math + pricing (tested by `npm test`)
 supabase/schema.sql      tables, RLS, job functions, storage bucket — run once in the SQL editor
+supabase/002_*.sql       later changes (materials, colors) — run after schema.sql, in order
 ```
 
 Until `assets/config.js` has real values, those pages show a "Preview · not live yet" notice and the estimator still works.
 
 ### Setup checklist
 1. Create a free project at https://supabase.com (pick the region closest to Tempe, e.g. West US).
-2. **SQL Editor → New query**: paste all of `supabase/schema.sql`, click **Run**.
+2. **SQL Editor → New query**: paste all of `supabase/schema.sql`, click **Run**. Then do the same with
+   `supabase/002_materials_colors.sql` (materials and color choices; run it even if you set up the database earlier).
 3. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `assets/config.js`.
    Never use the `service_role` key on the site.
 4. **Authentication → URL Configuration**: Site URL `https://thetalab3d.shop`; add redirect URLs

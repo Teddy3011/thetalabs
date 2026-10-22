@@ -59,7 +59,7 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, money, date, sizeText, tag, msg, requireConfig, getUser, getProfile } from './assets/app.js';
+import { sb, $, esc, money, date, sizeText, tag, materialText, colorText, msg, requireConfig, getUser, getProfile } from './assets/app.js';
 
 const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up / delivered'] };
 
@@ -92,7 +92,9 @@ if (requireConfig($('#gate'))) {
       <dl class="stats">
         <div><dt>Part size</dt><dd>${sizeText(o)}</dd></div>
         <div><dt>Weight</dt><dd>${o.est_weight_g} g × ${o.quantity}</dd></div>
-        <div><dt>Colors · infill</dt><dd>${o.colors} · ${o.infill}%</dd></div>
+        <div><dt>Material</dt><dd>${materialText(o)}</dd></div>
+        <div><dt>Colors</dt><dd>${esc(colorText(o))}</dd></div>
+        <div><dt>Infill</dt><dd>${o.infill}%</dd></div>
         <div><dt>Rush</dt><dd>${o.rush ? 'Yes, under 24 h' : 'No'}</dd></div>
         <div><dt>Location</dt><dd>${esc(o.city)} ${esc(o.zip || '')} · ${near(o)}</dd></div>
         <div><dt>Handover</dt><dd>${o.fulfillment === 'delivery' ? 'Local delivery' : 'Pickup'}</dd></div>

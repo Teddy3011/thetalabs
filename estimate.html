@@ -58,6 +58,7 @@
           </label>
           <label>Quantity <input type="number" name="quantity" min="1" max="50" value="1" required></label>
         </div>
+        <label>Material <select name="material"></select></label>
         <div class="row">
           <label>Colors
             <select name="colors">
@@ -77,6 +78,7 @@
             </select>
           </label>
         </div>
+        <div class="row" id="color-picks"></div>
         <label class="check"><input type="checkbox" name="rush"> Rush, under 24 hours (+<span id="rush-pct">25</span>%, when accepted)</label>
 
         <dl class="stats" id="price"></dl>
@@ -109,12 +111,12 @@
 
 <script type="module">
 import { sb, configured, $, esc, money, msg, getUser, getProfile } from './assets/app.js';
-import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS } from './assets/stl.js';
+import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
 const BED_MM = 256;                  // Bambu Lab A1
 const form = $('#opts');
-let settings = DEFAULT_SETTINGS, file = null, geo = null, user = null;
+let settings = DEFAULT_SETTINGS, materials = DEFAULT_MATERIALS, file = null, geo = null, user = null;
 
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') form.region.value = 'IN';
@@ -122,6 +124,8 @@ if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') form.region.value = 'IN';
 if (configured) {
   const { data } = await sb.from('settings').select('*');
   if (data?.length) settings = Object.fromEntries(data.map(s => [s.region, s]));
+  const mats = await sb.from('materials').select('*').eq('active', true).order('sort');
+  if (mats.data?.length) materials = mats.data;
   user = await getUser();
   if (user) {
     const p = await getProfile(user);
@@ -130,25 +134,47 @@ if (configured) {
   }
 }
 
+form.material.innerHTML = materials.map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
+const material = () => materials.find(m => m.id === form.material.value);
+
+// One color picker per color slot; keeps earlier picks when the count changes.
+function colorPicks() {
+  const n = +form.colors.value, box = $('#color-picks');
+  const keep = [...box.querySelectorAll('select')].map(s => s.value);
+  const defaults = ['Black', 'White', 'Lime', 'Red'];
+  box.innerHTML = Array.from({ length: n }, (_, i) => `<label>${n > 1 ? `Color ${i + 1}` : 'Color'}
+    <span class="swatch-row"><span class="swatch" aria-hidden="true"></span>
+    <select name="color">${Object.keys(COLORS).map(c => `<option ${c === (keep[i] || defaults[i]) ? 'selected' : ''}>${c}</option>`).join('')}</select></span>
+  </label>`).join('');
+}
+const swatches = () => $('#color-picks').querySelectorAll('label').forEach(l =>
+  l.querySelector('.swatch').style.background = COLORS[l.querySelector('select').value]);
+form.colors.addEventListener('change', () => { colorPicks(); render(); });
+colorPicks();
+
 const opts = () => ({
   region: form.region.value,
   quantity: Math.min(50, Math.max(1, parseInt(form.quantity.value) || 1)),
   colors: +form.colors.value,
   infill: +form.infill.value,
   rush: form.rush.checked,
+  material: form.material.value,
+  color_choices: [...$('#color-picks').querySelectorAll('select')].map(s => s.value),
 });
 
 function render() {
-  const o = opts(), s = settings[o.region];
+  const o = opts(), s = settings[o.region], m = material();
   $('#rush-pct').textContent = +s.rush_pct;
+  swatches();
   $('#place').disabled = !geo;
   if (!geo) { $('#price').innerHTML = ''; return; }
-  const grams = estimateWeight(geo, o.infill);
-  const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s);
+  const grams = estimateWeight(geo, o.infill, m.density);
+  const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
   $('#price').innerHTML = `
     <div><dt>Weight per part</dt><dd>${grams} g</dd></div>
-    <div><dt>Total PLA</dt><dd>${Math.round(grams * o.quantity * 10) / 10} g</dd></div>
-    <div><dt>Rate</dt><dd>${money(s.rate_min, s.currency)}–${money(s.rate_max, s.currency)} / g</dd></div>
+    <div><dt>Total ${esc(m.name.split(' ')[0])}</dt><dd>${Math.round(grams * o.quantity * 10) / 10} g</dd></div>
+    <div><dt>Rate</dt><dd>${money(s.rate_min * m.price_factor, s.currency)}–${money(s.rate_max * m.price_factor, s.currency)} / g</dd></div>
+    <div><dt>Colors</dt><dd>${o.color_choices.map(esc).join(', ')}</dd></div>
     <div><dt>Minimum order</dt><dd>${money(s.minimum, s.currency)}</dd></div>
     ${o.colors > 1 ? `<div><dt>Multicolor</dt><dd>+${money(s.multicolor, s.currency)}</dd></div>` : ''}
     ${o.rush ? `<div><dt>Rush</dt><dd>+${+s.rush_pct}%</dd></div>` : ''}
@@ -261,7 +287,7 @@ form.addEventListener('submit', async e => {
     city: form.city.value.trim(), zip: form.zip.value.trim() || null,
     fulfillment: form.fulfillment.value, notes: form.notes.value.trim() || null,
     size_x: geo.size[0], size_y: geo.size[1], size_z: geo.size[2],
-    est_weight_g: Math.max(0.1, estimateWeight(geo, o.infill)),
+    est_weight_g: Math.max(0.1, estimateWeight(geo, o.infill, material().density)),
   }).select('id').single();
   if (error) { btn.disabled = false; return msg($('#msg'), 'Order failed: ' + error.message, true); }
   location.href = 'track.html?id=' + data.id;

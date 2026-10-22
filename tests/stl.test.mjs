@@ -38,5 +38,9 @@ assert.deepEqual(priceRange(10, 2, 2, false, us), [25, 45]);       // 20 g + $5 
 assert.deepEqual(priceRange(10, 2, 2, true, us), [31.25, 56.25]);  // +25% rush
 assert.deepEqual(priceRange(40, 1, 3, true, inr), [562.5, 587.5]); // ₹240→300 min +150, ×1.25 / ₹320+150 ×1.25
 
+// materials: density changes weight, price_factor scales the rate
+assert.equal(estimateWeight(m, 100, 1.27), 10.2);                     // 8000 mm³ × 1.27
+assert.deepEqual(priceRange(20, 1, 1, false, us, 1.5), [30, 60]);     // TPU: $1.5–3 / g
+
 assert.throws(() => parseSTL(new TextEncoder().encode('hello').buffer), /Not a valid STL/);
 console.log('stl tests passed');

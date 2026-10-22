@@ -10,6 +10,8 @@ export const money = (n, cur) => new Intl.NumberFormat(cur === 'INR' ? 'en-IN' :
   { style: 'currency', currency: cur || 'USD', maximumFractionDigits: 2 }).format(n);
 export const priceText = o => `${money(o.price_low, o.currency)}–${money(o.price_high, o.currency)}`;
 export const sizeText = o => [o.size_x, o.size_y, o.size_z].map(n => Math.round(n)).join(' × ') + ' mm';
+export const materialText = o => (o.material || 'pla').toUpperCase();
+export const colorText = o => o.color_choices?.length ? o.color_choices.join(', ') : `${o.colors} color${o.colors > 1 ? 's' : ''}`;
 export const date = d => new Date(d).toLocaleString();
 
 export const STATUS = { open: 'Queued', accepted: 'Accepted', printing: 'Printing', ready: 'Ready', completed: 'Picked up', cancelled: 'Cancelled' };

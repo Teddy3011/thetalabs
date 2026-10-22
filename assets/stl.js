@@ -49,24 +49,35 @@ export function measure(v) {
   };
 }
 
-// Grams of PLA for one part at the given infill (0–100).
-export function estimateWeight({ volume, area }, infill) {
+// Grams for one part at the given infill (0–100) and material density (g/cm³).
+export function estimateWeight({ volume, area }, infill, density = PLA_DENSITY) {
   const shell = Math.min(volume, area * SHELL_MM);
   const mm3 = shell + (volume - shell) * infill / 100;
-  return Math.round(mm3 / 1000 * PLA_DENSITY * 10) / 10;
+  return Math.round(mm3 / 1000 * density * 10) / 10;
 }
 
-// s = one settings row: { rate_min, rate_max, minimum, multicolor, rush_pct }. Same formula as order_price() in SQL.
-export function priceRange(grams, qty, colors, rush, s) {
+// s = one settings row: { rate_min, rate_max, minimum, multicolor, rush_pct }; factor = material price_factor.
+// Same formula as order_price() in SQL.
+export function priceRange(grams, qty, colors, rush, s, factor = 1) {
   const calc = rate => {
     let p = Math.max(s.minimum, grams * qty * rate) + (colors > 1 ? s.multicolor : 0);
     if (rush) p *= 1 + s.rush_pct / 100;
     return Math.round(p * 100) / 100;
   };
-  return [calc(+s.rate_min), calc(+s.rate_max)];
+  return [calc(s.rate_min * factor), calc(s.rate_max * factor)];
 }
 
 export const DEFAULT_SETTINGS = {
   US: { region: 'US', currency: 'USD', rate_min: 1, rate_max: 2, minimum: 15, multicolor: 5, rush_pct: 25 },
   IN: { region: 'IN', currency: 'INR', rate_min: 6, rate_max: 8, minimum: 300, multicolor: 150, rush_pct: 25 },
 };
+
+export const DEFAULT_MATERIALS = [
+  { id: 'pla', name: 'PLA (standard)', density: 1.24, price_factor: 1 },
+  { id: 'petg', name: 'PETG (tougher, heat resistant)', density: 1.27, price_factor: 1.2 },
+  { id: 'tpu', name: 'TPU 95A (flexible)', density: 1.21, price_factor: 1.5 },
+];
+
+// Same list as the color_choices check in supabase/002_materials_colors.sql.
+export const COLORS = { Black: '#151515', White: '#f2f2f2', Grey: '#8a8a8a', Red: '#d62828', Blue: '#2563eb',
+  Green: '#16a34a', Yellow: '#facc15', Orange: '#f97316', Lime: '#c8ff00', Purple: '#7c3aed' };

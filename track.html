@@ -44,7 +44,7 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, date, priceText, sizeText, statusText, tag, requireConfig, requireUser } from './assets/app.js';
+import { sb, $, esc, date, priceText, sizeText, statusText, tag, materialText, colorText, requireConfig, requireUser } from './assets/app.js';
 
 const id = new URLSearchParams(location.search).get('id');
 const STEPS = ['open', 'printing', 'ready', 'completed'];  // accepted counts as still queued
@@ -59,7 +59,9 @@ function render(o) {
       <div><dt>File</dt><dd>${esc(o.filename)}</dd></div>
       <div><dt>Quantity</dt><dd>${o.quantity}</dd></div>
       <div><dt>Size</dt><dd>${sizeText(o)}</dd></div>
-      <div><dt>Colors · infill</dt><dd>${o.colors} · ${o.infill}%${o.rush ? ' · rush' : ''}</dd></div>
+      <div><dt>Material</dt><dd>${materialText(o)}</dd></div>
+      <div><dt>Colors</dt><dd>${esc(colorText(o))}</dd></div>
+      <div><dt>Infill</dt><dd>${o.infill}%${o.rush ? ' · rush' : ''}</dd></div>
       <div><dt>${o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}</dt><dd>${esc(o.city)} ${esc(o.zip || '')}</dd></div>
       <div class="total"><dt>Estimate</dt><dd>${priceText(o)}</dd></div>
     </dl>

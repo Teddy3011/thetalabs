@@ -46,6 +46,10 @@
       <h2>Pricing and payout</h2>
       <p class="small">Price = max(minimum, grams × quantity × rate) + multicolor fee, then + rush %. Printer payout = flat + % of the low price. The estimator and the database both use these values.</p>
       <form class="form" id="settings"></form>
+
+      <h2>Materials</h2>
+      <p class="small">Density sets the weight estimate. Price factor multiplies the per-gram rate (1 = PLA price). Untick Offered to hide a material from new orders.</p>
+      <form class="form" id="materials"></form>
     </div>
   </div>
 </main>
@@ -55,7 +59,7 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, money, date, priceText, sizeText, STATUS, msg, requireConfig, requireUser, getProfile } from './assets/app.js';
+import { sb, $, esc, money, date, priceText, sizeText, materialText, colorText, STATUS, msg, requireConfig, requireUser, getProfile } from './assets/app.js';
 
 const FIELDS = [['rate_min', 'Rate per gram, low'], ['rate_max', 'Rate per gram, high'], ['minimum', 'Minimum order'],
   ['multicolor', 'Multicolor fee'], ['rush_pct', 'Rush surcharge %'], ['payout_flat', 'Printer payout, flat'], ['payout_pct', 'Printer payout, % of price']];
@@ -95,7 +99,7 @@ if (requireConfig($('#gate'))) {
         <tbody>${data.map(o => `<tr>
           <td>${date(o.created_at)}</td><td>${esc(o.customer?.email)}</td>
           <td><button class="btn btn-sm btn-ghost" data-download="${o.id}">${esc(o.filename)}</button></td>
-          <td>${o.quantity} × ${o.est_weight_g} g · ${sizeText(o)} · ${o.colors}c · ${o.infill}%${o.rush ? ' · rush' : ''}${o.notes ? `<br><span class="small">${esc(o.notes)}</span>` : ''}</td>
+          <td>${o.quantity} × ${o.est_weight_g} g · ${sizeText(o)} · ${materialText(o)} · ${esc(colorText(o))} · ${o.infill}%${o.rush ? ' · rush' : ''}${o.notes ? `<br><span class="small">${esc(o.notes)}</span>` : ''}</td>
           <td>${priceText(o)}</td><td>${money(o.payout, o.currency)}</td>
           <td>${esc(o.city)} ${esc(o.zip || '')} · ${o.fulfillment}</td><td>${esc(o.printer?.email || '—')}</td>
           <td><select data-order="${o.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) =>
@@ -154,7 +158,39 @@ if (requireConfig($('#gate'))) {
       msg($('#msg'), 'Pricing saved. New estimates and orders use it now.');
     });
 
-    loadApps(); loadOrders(); loadSettings();
+    let mats = [];
+    async function loadMaterials() {
+      mats = (await sb.from('materials').select('*').order('sort')).data || [];
+      const row = (m, i) => `<tr>
+        <td><input name="id" value="${esc(m.id)}" ${m.id ? 'readonly' : 'placeholder="new_id"'} pattern="[a-z0-9_]{1,30}" aria-label="ID"></td>
+        <td><input name="name" value="${esc(m.name)}" maxlength="60" aria-label="Name"></td>
+        <td><input name="density" type="number" step="any" min="0.1" max="5" value="${m.density ?? ''}" aria-label="Density"></td>
+        <td><input name="price_factor" type="number" step="any" min="0.1" max="10" value="${m.price_factor ?? ''}" aria-label="Price factor"></td>
+        <td><input name="active" type="checkbox" ${m.active !== false ? 'checked' : ''} aria-label="Offered"></td></tr>`;
+      $('#materials').innerHTML = `<div class="table"><table>
+        <thead><tr><th>ID</th><th>Name</th><th>Density g/cm³</th><th>Price factor</th><th>Offered</th></tr></thead>
+        <tbody>${[...mats, {}].map(row).join('')}</tbody></table></div>
+        <p class="small">Fill in the last row to add a material.</p>
+        <div class="cta-row"><button class="btn" type="submit">Save materials</button></div>`;
+    }
+    $('#materials').addEventListener('submit', async e => {
+      e.preventDefault();
+      const rows = [...e.target.querySelectorAll('tbody tr')].map((tr, i) => ({
+        id: tr.querySelector('[name=id]').value.trim(), name: tr.querySelector('[name=name]').value.trim(),
+        density: +tr.querySelector('[name=density]').value, price_factor: +tr.querySelector('[name=price_factor]').value,
+        active: tr.querySelector('[name=active]').checked, sort: i + 1,
+      })).filter(r => r.id && r.name);
+      for (const r of rows) {
+        const res = mats.some(m => m.id === r.id)
+          ? await sb.from('materials').update(r).eq('id', r.id)
+          : await sb.from('materials').insert(r);
+        if (res.error) return show(res);
+      }
+      msg($('#msg'), 'Materials saved.');
+      loadMaterials();
+    });
+
+    loadApps(); loadOrders(); loadSettings(); loadMaterials();
     sb.channel('admin').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, loadOrders).subscribe();
   }
 }
