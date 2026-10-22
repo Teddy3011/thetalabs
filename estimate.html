@@ -126,6 +126,7 @@
 <script type="module">
 import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
+import { enhanceSelect } from './assets/combobox.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
 const BED_MM = 256;                  // Bambu Lab A1
@@ -157,14 +158,13 @@ function colorPicks() {
   const keep = [...box.querySelectorAll('select')].map(s => s.value);
   const defaults = ['Black', 'White', 'Lime', 'Red'];
   box.innerHTML = Array.from({ length: n }, (_, i) => `<label>${n > 1 ? `Color ${i + 1}` : 'Color'}
-    <span class="swatch-row"><span class="swatch" aria-hidden="true"></span>
-    <select name="color">${Object.keys(COLORS).map(c => `<option ${c === (keep[i] || defaults[i]) ? 'selected' : ''}>${c}</option>`).join('')}</select></span>
+    <select name="color">${Object.keys(COLORS).map(c => `<option ${c === (keep[i] || defaults[i]) ? 'selected' : ''}>${c}</option>`).join('')}</select>
   </label>`).join('');
+  for (const s of box.querySelectorAll('select')) enhanceSelect(s, { swatches: COLORS });
 }
-const swatches = () => $('#color-picks').querySelectorAll('label').forEach(l =>
-  l.querySelector('.swatch').style.background = COLORS[l.querySelector('select').value]);
 form.colors.addEventListener('change', () => { colorPicks(); render(); });
 colorPicks();
+for (const s of form.querySelectorAll('select')) enhanceSelect(s);  // themed dropdowns (assets/combobox.js)
 
 const opts = () => ({
   region: form.region.value,
@@ -179,7 +179,6 @@ const opts = () => ({
 function render() {
   const o = opts(), s = settings[o.region], m = material();
   $('#rush-pct').textContent = +s.rush_pct;
-  swatches();
   $('#place').disabled = $('#copy').disabled = !geo;
   $('#quote-bar').hidden = !geo;
   $('#quote-price').classList.toggle('is-empty', !geo);

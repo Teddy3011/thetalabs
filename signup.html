@@ -73,11 +73,13 @@
 
 <script type="module">
 import { sb, $, msg, requireConfig } from './assets/app.js';
+import { enhanceSelect } from './assets/combobox.js';
 
 const form = $('#signup');
 if (new URLSearchParams(location.search).get('role') === 'printer') form.role.value = 'printer';
 if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Calcutta' ||
     Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Kolkata') form.region.value = 'IN';
+enhanceSelect(form.region);
 const sync = () => $('#printer-fields').hidden = form.role.value !== 'printer';
 form.addEventListener('change', sync);
 sync();
