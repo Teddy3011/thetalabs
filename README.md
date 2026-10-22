@@ -16,6 +16,40 @@ assets/                  images (WebP), blueprint.svg, og-image.png, fonts/
 *.png (root)             original artwork, kept as source files; the site loads the WebP versions in assets/
 ```
 
+## Accounts, orders and the printer marketplace (Supabase)
+
+```
+estimate.html            STL estimate in the browser; signed-in customers place orders (file → private storage)
+account.html             My orders, live status
+track.html?id=…          one order, live status
+printers.html            printer owners: apply, then accept jobs / download / start / ready / picked up
+admin.html               approve printers, all orders + status, pricing and payout settings
+login.html, signup.html
+assets/config.js         Supabase project URL + anon key (public)
+assets/app.js            shared client code; assets/stl.js STL math + pricing (tested by `npm test`)
+supabase/schema.sql      tables, RLS, job functions, storage bucket — run once in the SQL editor
+```
+
+Until `assets/config.js` has real values, those pages show a "Preview · not live yet" notice and the estimator still works.
+
+### Setup checklist
+1. Create a free project at https://supabase.com (pick the region closest to Tempe, e.g. West US).
+2. **SQL Editor → New query**: paste all of `supabase/schema.sql`, click **Run**.
+3. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `assets/config.js`.
+   Never use the `service_role` key on the site.
+4. **Authentication → URL Configuration**: Site URL `https://thetalab3d.shop`; add redirect URLs
+   `https://thetalab3d.shop/login.html` and `http://localhost:8000/login.html`.
+5. **Authentication → Emails**: the built-in sender only sends a few emails per hour. Before real customers sign up,
+   add your own SMTP (e.g. Resend, Brevo, or your mail provider) under **SMTP Settings**.
+6. Sign up on the site with `info@thetalab3d.shop`, confirm the email, then in the SQL editor run
+   `update public.profiles set role = 'admin' where email = 'info@thetalab3d.shop';`
+7. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
+   accept it as the printer.
+
+Notes: the free plan caps uploads at 50 MB per file, so the bucket limit is 50 MB (60 MB needs the Pro plan; see the
+comment in `schema.sql`). Payments are not online yet: customers are told we confirm the price and they pay on pickup
+or by invoice. Stripe Checkout is the planned next step. Free projects pause after a week with no activity.
+
 ## Local preview
 
 ```bash

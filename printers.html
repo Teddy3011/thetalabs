@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Printer Owners | Theta Labs 3D</title>
+<meta name="description" content="Own a 3D printer in Tempe or Hyderabad? Apply to print local jobs for Theta Labs 3D.">
+<link rel="canonical" href="https://thetalab3d.shop/printers.html">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html" aria-current="page">Printers</a></li>
+        <li><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap">
+    <p class="eyebrow">Printer owners</p>
+    <h1>Print local jobs.</h1>
+    <div id="gate"></div>
+    <div id="intro">
+      <p class="section-lead">Own a 3D printer near Tempe or Hyderabad? Apply, and once we approve you, you'll see open jobs
+        with their size, weight and payout. Accept one, download the file, print it and mark it ready.</p>
+      <div class="cta-row">
+        <a class="btn" href="signup.html?role=printer">Apply as a printer</a>
+        <a class="btn btn-ghost" href="login.html?next=printers.html">Log in</a>
+      </div>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+    <div id="board" hidden>
+      <h2>My jobs</h2>
+      <ul class="jobs" id="mine"></ul>
+      <h2>Open jobs</h2>
+      <ul class="jobs" id="open"></ul>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, esc, money, date, sizeText, tag, msg, requireConfig, getUser, getProfile } from './assets/app.js';
+
+const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up / delivered'] };
+
+if (requireConfig($('#gate'))) {
+  const user = await getUser();
+  const profile = user && await getProfile(user);
+  if (user) $('#intro').hidden = true;
+
+  if (profile && profile.role === 'customer') {
+    msg($('#msg'), 'This is a customer account. To print jobs, sign up as a printer with a different email, or email info@thetalab3d.shop.');
+  } else if (profile && profile.role === 'printer') {
+    const { data: app } = await sb.from('printer_applications').select('*').eq('user_id', user.id).maybeSingle();
+    if (app?.status === 'approved') start(app);
+    else msg($('#msg'), app?.status === 'rejected'
+      ? 'Your printer application was not approved. Email info@thetalab3d.shop if you have questions.'
+      : 'Thanks for applying. We review every printer owner; you will see jobs here once you are approved.');
+  } else if (profile && profile.role === 'admin') {
+    start({ city: profile.city, zip: profile.zip });
+  }
+
+  function start(me) {
+    $('#board').hidden = false;
+    const near = o => o.zip && me.zip && o.zip === me.zip ? 'Same ZIP'
+      : me.city && o.city.trim().toLowerCase() === me.city.trim().toLowerCase() ? 'Same city' : 'Other city';
+    const rank = o => ({ 'Same ZIP': 0, 'Same city': 1, 'Other city': 2 })[near(o)];
+
+    const card = (o, actions) => `<li class="job">
+      <div class="job-head"><span class="job-pay">${money(o.payout, o.currency)}</span>${tag(o)}</div>
+      <span class="small">Payout · posted ${date(o.created_at)}</span>
+      <dl class="stats">
+        <div><dt>Part size</dt><dd>${sizeText(o)}</dd></div>
+        <div><dt>Weight</dt><dd>${o.est_weight_g} g × ${o.quantity}</dd></div>
+        <div><dt>Colors · infill</dt><dd>${o.colors} · ${o.infill}%</dd></div>
+        <div><dt>Rush</dt><dd>${o.rush ? 'Yes, under 24 h' : 'No'}</dd></div>
+        <div><dt>Location</dt><dd>${esc(o.city)} ${esc(o.zip || '')} · ${near(o)}</dd></div>
+        <div><dt>Handover</dt><dd>${o.fulfillment === 'delivery' ? 'Local delivery' : 'Pickup'}</dd></div>
+        ${o.notes ? `<div><dt>Notes</dt><dd>${esc(o.notes)}</dd></div>` : ''}
+      </dl>
+      <div class="cta-row">${actions}</div>
+    </li>`;
+
+    let jobs = {};
+    async function load() {
+      const { data, error } = await sb.from('orders').select('*').in('status', ['open', 'accepted', 'printing', 'ready']);
+      if (error) return msg($('#msg'), error.message, true);
+      const open = data.filter(o => o.status === 'open').sort((a, b) => rank(a) - rank(b) || a.created_at.localeCompare(b.created_at));
+      const mine = data.filter(o => o.printer_id === user.id);
+      $('#open').innerHTML = open.map(o => card(o, `<button class="btn btn-sm" data-accept="${o.id}">Accept job</button>`)).join('')
+        || '<li class="small">No open jobs right now. This list updates live.</li>';
+      $('#mine').innerHTML = mine.map(o => card(o, `
+        <button class="btn btn-sm btn-ghost" data-download="${o.id}">Download file</button>
+        <button class="btn btn-sm" data-status="${o.id}" data-to="${NEXT[o.status][0]}">${NEXT[o.status][1]}</button>`)).join('')
+        || '<li class="small">You have no jobs in progress.</li>';
+      jobs = Object.fromEntries(data.map(o => [o.id, o]));
+    }
+
+    document.addEventListener('click', async e => {
+      const b = e.target.closest('button[data-accept], button[data-download], button[data-status]');
+      if (!b) return;
+      b.disabled = true;
+      let error;
+      if (b.dataset.accept) {
+        ({ error } = await sb.rpc('accept_job', { order_id: b.dataset.accept }));
+        if (!error) msg($('#msg'), 'Job accepted. Download the file from My jobs.');
+      } else if (b.dataset.status) {
+        ({ error } = await sb.rpc('set_job_status', { order_id: b.dataset.status, new_status: b.dataset.to }));
+      } else {
+        const o = jobs[b.dataset.download];
+        const res = await sb.storage.from('stl').createSignedUrl(o.file_path, 300, { download: o.filename });  // 5-minute link
+        error = res.error;
+        if (!error) location.href = res.data.signedUrl;
+        b.disabled = false;
+      }
+      if (error) msg($('#msg'), error.message, true);
+      load();
+    });
+
+    load();
+    sb.channel('board').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, load).subscribe();
+    setInterval(load, 30000);  // jobs taken by others stop matching RLS, so Realtime never tells us; poll to drop them
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="login.html" data-auth-link aria-current="page">Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap narrow">
+    <p class="eyebrow">Account</p>
+    <h1>Log in</h1>
+    <div id="gate"></div>
+    <form class="form" id="login">
+      <label>Email <input type="email" name="email" autocomplete="email" required></label>
+      <label>Password <input type="password" name="password" autocomplete="current-password" required></label>
+      <div class="cta-row">
+        <button class="btn" type="submit">Log in</button>
+        <button class="btn btn-ghost" type="button" id="forgot">Forgot password?</button>
+      </div>
+      <p class="msg" id="msg" role="status"></p>
+      <p class="small">New here? <a href="signup.html">Create an account</a> as a customer or a printer owner.</p>
+    </form>
+    <form class="form" id="reset" hidden>
+      <label>New password <input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
+      <button class="btn" type="submit">Set new password</button>
+      <p class="msg" id="reset-msg" role="status"></p>
+    </form>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, msg, requireConfig } from './assets/app.js';
+
+const next = new URLSearchParams(location.search).get('next');
+const goNext = () => location.href = /^[\w-]+\.html(\?[\w=&%.-]*)?$/.test(next || '') ? next : 'account.html';
+
+if (requireConfig($('#gate'))) {
+  $('#login').addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    msg($('#msg'), 'Logging in…');
+    const { error } = await sb.auth.signInWithPassword({ email: f.get('email'), password: f.get('password') });
+    if (error) return msg($('#msg'), error.message, true);
+    goNext();
+  });
+
+  $('#forgot').addEventListener('click', async () => {
+    const email = $('#login').email.value;
+    if (!email) return msg($('#msg'), 'Enter your email first.', true);
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    msg($('#msg'), error ? error.message : 'If that email has an account, a reset link is on its way.', !!error);
+  });
+
+  // The reset link signs the user in with a recovery session and lands here.
+  sb.auth.onAuthStateChange(event => {
+    if (event !== 'PASSWORD_RECOVERY') return;
+    $('#login').hidden = true;
+    $('#reset').hidden = false;
+  });
+  $('#reset').addEventListener('submit', async e => {
+    e.preventDefault();
+    const { error } = await sb.auth.updateUser({ password: e.target.password.value });
+    if (error) return msg($('#reset-msg'), error.message, true);
+    goNext();
+  });
+} else {
+  $('#login').hidden = true;
+}
+</script>
+</body>
+</html>

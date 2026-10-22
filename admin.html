@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap">
+    <p class="eyebrow">Admin</p>
+    <h1>Run the shop.</h1>
+    <div id="gate"></div>
+    <p class="msg" id="msg" role="status"></p>
+    <div id="admin" hidden>
+      <h2>Printer applications</h2>
+      <div id="apps"></div>
+
+      <h2>Orders</h2>
+      <div id="orders"></div>
+
+      <h2>Pricing and payout</h2>
+      <p class="small">Price = max(minimum, grams × quantity × rate) + multicolor fee, then + rush %. Printer payout = flat + % of the low price. The estimator and the database both use these values.</p>
+      <form class="form" id="settings"></form>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, esc, money, date, priceText, sizeText, STATUS, msg, requireConfig, requireUser, getProfile } from './assets/app.js';
+
+const FIELDS = [['rate_min', 'Rate per gram, low'], ['rate_max', 'Rate per gram, high'], ['minimum', 'Minimum order'],
+  ['multicolor', 'Multicolor fee'], ['rush_pct', 'Rush surcharge %'], ['payout_flat', 'Printer payout, flat'], ['payout_pct', 'Printer payout, % of price']];
+const show = r => r.error && msg($('#msg'), r.error.message, true);
+
+if (requireConfig($('#gate'))) {
+  const user = await requireUser();
+  const profile = user && await getProfile(user);
+  if (user && profile?.role !== 'admin') msg($('#msg'), 'This page is for the site admin only.', true);
+  else if (user) {
+    $('#admin').hidden = false;
+
+    async function loadApps() {
+      const { data, error } = await sb.from('printer_applications').select('*, profile:profiles(email, full_name)').order('created_at');
+      if (error) return msg($('#msg'), error.message, true);
+      data.sort((a, b) => (a.status !== 'pending') - (b.status !== 'pending'));
+      $('#apps').innerHTML = !data.length ? '<p class="small">No applications yet.</p>' : `<div class="table"><table>
+        <thead><tr><th>Name</th><th>Email</th><th>Printer</th><th>Location</th><th>Notes</th><th>Status</th><th></th></tr></thead>
+        <tbody>${data.map(a => `<tr>
+          <td>${esc(a.profile?.full_name)}</td><td>${esc(a.profile?.email)}</td><td>${esc(a.printer_model)}</td>
+          <td>${esc(a.city)} ${esc(a.zip || '')} · ${a.region}</td><td>${esc(a.notes)}</td><td>${a.status}</td>
+          <td><div class="cta-row">
+            ${a.status !== 'approved' ? `<button class="btn btn-sm" data-app="${a.user_id}" data-to="approved">Approve</button>` : ''}
+            ${a.status !== 'rejected' ? `<button class="btn btn-sm btn-ghost" data-app="${a.user_id}" data-to="rejected">${a.status === 'approved' ? 'Revoke' : 'Reject'}</button>` : ''}
+          </div></td></tr>`).join('')}</tbody></table></div>`;
+    }
+
+    let orders = {};
+    async function loadOrders() {
+      const { data, error } = await sb.from('orders')
+        .select('*, customer:profiles!orders_customer_id_fkey(email), printer:profiles!orders_printer_id_fkey(email)')
+        .order('created_at', { ascending: false }).limit(200);
+      if (error) return msg($('#msg'), error.message, true);
+      orders = Object.fromEntries(data.map(o => [o.id, o]));
+      $('#orders').innerHTML = !data.length ? '<p class="small">No orders yet.</p>' : `<div class="table"><table>
+        <thead><tr><th>Placed</th><th>Customer</th><th>File</th><th>Job</th><th>Estimate</th><th>Payout</th><th>Where</th><th>Printer</th><th>Status</th></tr></thead>
+        <tbody>${data.map(o => `<tr>
+          <td>${date(o.created_at)}</td><td>${esc(o.customer?.email)}</td>
+          <td><button class="btn btn-sm btn-ghost" data-download="${o.id}">${esc(o.filename)}</button></td>
+          <td>${o.quantity} × ${o.est_weight_g} g · ${sizeText(o)} · ${o.colors}c · ${o.infill}%${o.rush ? ' · rush' : ''}${o.notes ? `<br><span class="small">${esc(o.notes)}</span>` : ''}</td>
+          <td>${priceText(o)}</td><td>${money(o.payout, o.currency)}</td>
+          <td>${esc(o.city)} ${esc(o.zip || '')} · ${o.fulfillment}</td><td>${esc(o.printer?.email || '—')}</td>
+          <td><select data-order="${o.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) =>
+            `<option value="${k}" ${k === o.status ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
+        </tr>`).join('')}</tbody></table></div>`;
+    }
+
+    async function loadSettings() {
+      const { data } = await sb.from('settings').select('*').order('region', { ascending: false });
+      $('#settings').innerHTML = `<div class="table"><table>
+        <thead><tr><th></th>${data.map(s => `<th>${s.region} (${s.currency})</th>`).join('')}</tr></thead>
+        <tbody>${FIELDS.map(([k, label]) => `<tr><td>${label}</td>${data.map(s =>
+          `<td><input type="number" step="any" min="0" name="${s.region}.${k}" value="${s[k]}" required aria-label="${s.region} ${label}"></td>`).join('')}</tr>`).join('')}
+        </tbody></table></div>
+        <div class="cta-row"><button class="btn" type="submit">Save pricing</button></div>`;
+    }
+
+    document.addEventListener('click', async e => {
+      const b = e.target.closest('button[data-app], button[data-download]');
+      if (!b) return;
+      if (b.dataset.app) {
+        show(await sb.from('printer_applications').update({ status: b.dataset.to, reviewed_at: new Date().toISOString() }).eq('user_id', b.dataset.app));
+        loadApps();
+      } else {
+        const o = orders[b.dataset.download];
+        const r = await sb.storage.from('stl').createSignedUrl(o.file_path, 300, { download: o.filename });
+        show(r);
+        if (!r.error) location.href = r.data.signedUrl;
+      }
+    });
+
+    document.addEventListener('change', async e => {
+      const id = e.target.dataset.order;
+      if (!id) return;
+      const status = e.target.value;
+      // Re-opening a job releases it from its printer; other statuses keep the printer.
+      const patch = status === 'open' ? { status, printer_id: null, accepted_at: null } : { status };
+      const r = await sb.from('orders').update(patch).eq('id', id);
+      if (r.error?.message.includes('printer_matches_status'))
+        msg($('#msg'), 'That status needs a printer. Accept the job on the job board first (you can accept it yourself).', true);
+      else show(r);
+      loadOrders();
+    });
+
+    $('#settings').addEventListener('submit', async e => {
+      e.preventDefault();
+      const rows = {};
+      for (const [name, v] of new FormData(e.target)) {
+        const [region, k] = name.split('.');
+        (rows[region] ??= { updated_at: new Date().toISOString() })[k] = +v;
+      }
+      for (const [region, row] of Object.entries(rows)) {
+        const r = await sb.from('settings').update(row).eq('region', region);
+        if (r.error) return show(r);
+      }
+      msg($('#msg'), 'Pricing saved. New estimates and orders use it now.');
+    });
+
+    loadApps(); loadOrders(); loadSettings();
+    sb.channel('admin').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, loadOrders).subscribe();
+  }
+}
+</script>
+</body>
+</html>

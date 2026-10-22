@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Instant Estimate | Theta Labs 3D</title>
+<meta name="description" content="Drop in an STL file to see its size, estimated weight and a price range for 3D printing in Tempe, Arizona or Hyderabad, India.">
+<link rel="canonical" href="https://thetalab3d.shop/estimate.html">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html" aria-current="page">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap">
+    <p class="eyebrow">Instant estimate</p>
+    <h1>Drop in your STL.</h1>
+    <p class="section-lead">Your file is measured in your browser. Nothing is uploaded until you place an order.</p>
+
+    <div class="cols">
+      <div>
+        <label class="drop" id="drop">
+          <input type="file" id="file" accept=".stl" class="sr-only">
+          <strong>Choose or drop an .stl file</strong>
+          <span class="small">Up to 50 MB · binary or ASCII STL</span>
+        </label>
+        <canvas class="viewer" id="viewer" hidden aria-label="3D preview of your part. Drag to rotate."></canvas>
+        <dl class="stats" id="geo" hidden></dl>
+      </div>
+
+      <form class="form" id="opts">
+        <div class="row">
+          <label>Region
+            <select name="region">
+              <option value="US">United States (USD)</option>
+              <option value="IN">India (INR)</option>
+            </select>
+          </label>
+          <label>Quantity <input type="number" name="quantity" min="1" max="50" value="1" required></label>
+        </div>
+        <div class="row">
+          <label>Colors
+            <select name="colors">
+              <option value="1">1 color</option>
+              <option value="2">2 colors</option>
+              <option value="3">3 colors</option>
+              <option value="4">4 colors</option>
+            </select>
+          </label>
+          <label>Infill
+            <select name="infill">
+              <option value="10">10% (light)</option>
+              <option value="15" selected>15% (standard)</option>
+              <option value="25">25%</option>
+              <option value="50">50% (strong)</option>
+              <option value="100">100% (solid)</option>
+            </select>
+          </label>
+        </div>
+        <label class="check"><input type="checkbox" name="rush"> Rush, under 24 hours (+<span id="rush-pct">25</span>%, when accepted)</label>
+
+        <dl class="stats" id="price"></dl>
+
+        <fieldset>
+          <legend>Order</legend>
+          <div class="row">
+            <label>Pickup or delivery
+              <select name="fulfillment">
+                <option value="pickup">Pickup</option>
+                <option value="delivery">Local delivery</option>
+              </select>
+            </label>
+            <label>City <input name="city" maxlength="80" required></label>
+            <label>ZIP / PIN <input name="zip" maxlength="12"></label>
+          </div>
+          <label>Notes <textarea name="notes" rows="3" maxlength="1000" placeholder="Colors, deadline, anything else"></textarea></label>
+          <p class="small">Payment: we confirm the final price by email and you pay on pickup or by invoice. No card needed now.</p>
+          <button class="btn" type="submit" id="place" disabled>Place order request</button>
+          <p class="msg" id="msg" role="status"></p>
+        </fieldset>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, configured, $, esc, money, msg, getUser, getProfile } from './assets/app.js';
+import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS } from './assets/stl.js';
+
+const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
+const BED_MM = 256;                  // Bambu Lab A1
+const form = $('#opts');
+let settings = DEFAULT_SETTINGS, file = null, geo = null, user = null;
+
+const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') form.region.value = 'IN';
+
+if (configured) {
+  const { data } = await sb.from('settings').select('*');
+  if (data?.length) settings = Object.fromEntries(data.map(s => [s.region, s]));
+  user = await getUser();
+  if (user) {
+    const p = await getProfile(user);
+    if (p?.city) form.city.value = p.city;
+    if (p?.zip) form.zip.value = p.zip;
+  }
+}
+
+const opts = () => ({
+  region: form.region.value,
+  quantity: Math.min(50, Math.max(1, parseInt(form.quantity.value) || 1)),
+  colors: +form.colors.value,
+  infill: +form.infill.value,
+  rush: form.rush.checked,
+});
+
+function render() {
+  const o = opts(), s = settings[o.region];
+  $('#rush-pct').textContent = +s.rush_pct;
+  $('#place').disabled = !geo;
+  if (!geo) { $('#price').innerHTML = ''; return; }
+  const grams = estimateWeight(geo, o.infill);
+  const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s);
+  $('#price').innerHTML = `
+    <div><dt>Weight per part</dt><dd>${grams} g</dd></div>
+    <div><dt>Total PLA</dt><dd>${Math.round(grams * o.quantity * 10) / 10} g</dd></div>
+    <div><dt>Rate</dt><dd>${money(s.rate_min, s.currency)}–${money(s.rate_max, s.currency)} / g</dd></div>
+    <div><dt>Minimum order</dt><dd>${money(s.minimum, s.currency)}</dd></div>
+    ${o.colors > 1 ? `<div><dt>Multicolor</dt><dd>+${money(s.multicolor, s.currency)}</dd></div>` : ''}
+    ${o.rush ? `<div><dt>Rush</dt><dd>+${+s.rush_pct}%</dd></div>` : ''}
+    <div class="total"><dt>Estimate</dt><dd>${money(lo, s.currency)}–${money(hi, s.currency)}</dd></div>`;
+}
+form.addEventListener('input', render);
+render();
+
+async function load(f) {
+  msg($('#msg'), '');
+  if (!/\.stl$/i.test(f.name)) return msg($('#msg'), 'Please choose an .stl file.', true);
+  if (f.size > MAX_BYTES) return msg($('#msg'), 'That file is over 50 MB. Email it to us instead.', true);
+  try {
+    const verts = parseSTL(await f.arrayBuffer());
+    geo = measure(verts);
+    if (!(geo.volume > 0)) throw new Error('This STL has no volume. Is the mesh closed?');
+    file = f;
+    const big = geo.size.some(d => d > BED_MM);
+    $('#geo').hidden = false;
+    $('#geo').innerHTML = `
+      <div><dt>File</dt><dd>${esc(f.name)}</dd></div>
+      <div><dt>Size (X × Y × Z)</dt><dd>${geo.size.map(d => d.toFixed(1)).join(' × ')} mm</dd></div>
+      <div><dt>Volume</dt><dd>${(geo.volume / 1000).toFixed(2)} cm³</dd></div>
+      <div><dt>Surface area</dt><dd>${(geo.area / 100).toFixed(1)} cm²</dd></div>
+      <div><dt>Triangles</dt><dd>${geo.triangles.toLocaleString()}</dd></div>
+      ${big ? `<div><dt>Note</dt><dd>Larger than a ${BED_MM} mm bed. We'll confirm if it can be split.</dd></div>` : ''}`;
+    viewer($('#viewer'), verts, geo);
+  } catch (e) {
+    geo = file = null;
+    msg($('#msg'), e.message, true);
+  }
+  render();
+}
+
+$('#file').addEventListener('change', e => e.target.files[0] && load(e.target.files[0]));
+const drop = $('#drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && load(e.dataTransfer.files[0]); });
+
+// Flat-shaded painter's-algorithm preview on a 2D canvas. Drag to rotate.
+function viewer(canvas, v, g) {
+  canvas.hidden = false;
+  const ctx = canvas.getContext('2d');
+  const step = Math.max(1, Math.ceil(g.triangles / 60000));  // ponytail: samples huge meshes; WebGL if previews must be exact
+  const n = Math.ceil(g.triangles / step);
+  const c = g.min.map((m, a) => (m + g.max[a]) / 2);
+  const radius = Math.hypot(...g.size) / 2 || 1;
+  const P = new Float32Array(n * 9), depth = new Float32Array(n), order = new Uint32Array(n);
+  let yaw = 0.7, pitch = 0.45;
+
+  function draw() {
+    const dpr = devicePixelRatio || 1, w = canvas.width = canvas.clientWidth * dpr, h = canvas.height = canvas.clientHeight * dpr;
+    const s = Math.min(w, h) * 0.45 / radius, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    for (let t = 0; t < n; t++) {
+      const i = t * step * 9;
+      let d = 0;
+      for (let k = 0; k < 3; k++) {
+        const x = v[i + k * 3] - c[0], y = v[i + k * 3 + 1] - c[1], z = v[i + k * 3 + 2] - c[2];
+        const x1 = x * cy - y * sy, y1 = x * sy + y * cy;
+        const y2 = y1 * cp - z * sp, z2 = y1 * sp + z * cp;
+        P[t * 9 + k * 3] = w / 2 + x1 * s; P[t * 9 + k * 3 + 1] = h / 2 - z2 * s; P[t * 9 + k * 3 + 2] = y2;
+        d += y2;
+      }
+      depth[t] = d; order[t] = t;
+    }
+    order.sort((a, b) => depth[b] - depth[a]);
+    ctx.clearRect(0, 0, w, h);
+    for (const t of order) {
+      const o = t * 9;
+      const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2];
+      const wx = P[o + 6] - P[o], wy = P[o + 7] - P[o + 1], wz = P[o + 8] - P[o + 2];
+      const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
+      const k = 0.25 + 0.75 * Math.abs(nz) / (Math.hypot(nx, ny, nz) || 1);
+      ctx.fillStyle = ctx.strokeStyle = `rgb(${200 * k | 0},${255 * k | 0},${40 * k | 0})`;
+      ctx.beginPath(); ctx.moveTo(P[o], P[o + 1]); ctx.lineTo(P[o + 3], P[o + 4]); ctx.lineTo(P[o + 6], P[o + 7]);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+    }
+  }
+  let last = null;
+  canvas.onpointerdown = e => { last = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); };
+  canvas.onpointerup = () => last = null;
+  canvas.onpointermove = e => {
+    if (!last) return;
+    yaw += (e.clientX - last[0]) * 0.01;
+    pitch = Math.max(-1.5, Math.min(1.5, pitch + (e.clientY - last[1]) * 0.01));
+    last = [e.clientX, e.clientY];
+    requestAnimationFrame(draw);
+  };
+  draw();
+}
+
+form.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!configured) return msg($('#msg'), 'Online ordering isn\'t live yet. Email info@thetalab3d.shop with your file and these options.', true);
+  if (!user) {
+    $('#msg').innerHTML = 'Please <a href="login.html?next=estimate.html">log in</a> or <a href="signup.html">create an account</a> to place an order. You\'ll need to choose the file again afterwards.';
+    return;
+  }
+  const o = opts(), btn = $('#place');
+  btn.disabled = true;
+  msg($('#msg'), 'Uploading your file…');
+  const path = `${user.id}/${crypto.randomUUID()}.stl`;
+  const up = await sb.storage.from('stl').upload(path, file, { contentType: 'model/stl' });
+  if (up.error) { btn.disabled = false; return msg($('#msg'), 'Upload failed: ' + up.error.message, true); }
+  msg($('#msg'), 'Creating your order…');
+  // Price, payout and status are recomputed by the database; these values only need to pass its checks.
+  const { data, error } = await sb.from('orders').insert({
+    ...o, file_path: path, filename: file.name.slice(-200),
+    city: form.city.value.trim(), zip: form.zip.value.trim() || null,
+    fulfillment: form.fulfillment.value, notes: form.notes.value.trim() || null,
+    size_x: geo.size[0], size_y: geo.size[1], size_z: geo.size[2],
+    est_weight_g: Math.max(0.1, estimateWeight(geo, o.infill)),
+  }).select('id').single();
+  if (error) { btn.disabled = false; return msg($('#msg'), 'Order failed: ' + error.message, true); }
+  location.href = 'track.html?id=' + data.id;
+});
+</script>
+</body>
+</html>

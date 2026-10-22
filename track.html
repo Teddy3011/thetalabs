@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Track order | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap narrow">
+    <p class="eyebrow">Order status</p>
+    <h1>Track your order</h1>
+    <div id="gate"></div>
+    <div id="order" aria-live="polite"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, esc, date, priceText, sizeText, statusText, tag, requireConfig, requireUser } from './assets/app.js';
+
+const id = new URLSearchParams(location.search).get('id');
+const STEPS = ['open', 'printing', 'ready', 'completed'];  // accepted counts as still queued
+
+function render(o) {
+  const reached = o.status === 'accepted' ? 0 : STEPS.indexOf(o.status);
+  $('#order').innerHTML = `
+    <p>${tag(o)} <span class="small">Order ${esc(o.id.slice(0, 8))} · placed ${date(o.created_at)}</span></p>
+    ${o.status === 'cancelled' ? '<p class="msg err">This order was cancelled. Email info@thetalab3d.shop with any questions.</p>' : `
+    <ol class="steps">${STEPS.map((s, i) => `<li class="${i <= reached ? 'done' : ''}">${esc(statusText({ ...o, status: s }))}</li>`).join('')}</ol>`}
+    <dl class="stats">
+      <div><dt>File</dt><dd>${esc(o.filename)}</dd></div>
+      <div><dt>Quantity</dt><dd>${o.quantity}</dd></div>
+      <div><dt>Size</dt><dd>${sizeText(o)}</dd></div>
+      <div><dt>Colors · infill</dt><dd>${o.colors} · ${o.infill}%${o.rush ? ' · rush' : ''}</dd></div>
+      <div><dt>${o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}</dt><dd>${esc(o.city)} ${esc(o.zip || '')}</dd></div>
+      <div class="total"><dt>Estimate</dt><dd>${priceText(o)}</dd></div>
+    </dl>
+    <p class="small">We confirm the final price by email. You pay on pickup or by invoice. This page updates live.</p>`;
+}
+
+if (requireConfig($('#gate'))) {
+  const user = await requireUser();
+  if (user && !id) {
+    $('#order').innerHTML = '<p class="msg">Pick an order from <a href="account.html">My orders</a>.</p>';
+  } else if (user) {
+    // RLS returns nothing unless this is your order (or you're the printer/admin).
+    const { data } = await sb.from('orders').select('*').eq('id', id).maybeSingle();
+    if (!data) {
+      $('#order').innerHTML = '<p class="msg err">Order not found. Check <a href="account.html">My orders</a>.</p>';
+    } else {
+      render(data);
+      sb.channel('order-' + id)
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${id}` }, p => render(p.new))
+        .subscribe();
+    }
+  }
+}
+</script>
+</body>
+</html>

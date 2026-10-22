@@ -1,0 +1,4 @@
+// Supabase → Project Settings → API. The anon key is public by design (RLS protects the data).
+// Never put the service_role key here.
+export const SUPABASE_URL = 'https://YOUR_PROJECT_REF.supabase.co';
+export const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';

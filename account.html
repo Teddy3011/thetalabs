@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My orders | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="account.html" data-auth-link aria-current="page">Account</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap">
+    <p class="eyebrow">Account</p>
+    <h1>My orders</h1>
+    <div id="gate"></div>
+    <div id="me"></div>
+    <div id="orders"></div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, esc, date, priceText, tag, requireConfig, requireUser, getProfile } from './assets/app.js';
+
+if (requireConfig($('#gate'))) {
+  const user = await requireUser();
+  if (user) {
+    const p = await getProfile(user);
+    $('#me').innerHTML = `<p class="section-lead">Signed in as ${esc(p?.email)}.
+      ${p?.role === 'printer' ? '<a href="printers.html">Go to the job board</a> · ' : ''}
+      ${p?.role === 'admin' ? '<a href="admin.html">Admin</a> · <a href="printers.html">Job board</a> · ' : ''}
+      <a href="estimate.html">New order</a> ·
+      <a href="#" id="logout">Log out</a></p>`;
+    $('#logout').addEventListener('click', async e => {
+      e.preventDefault();
+      await sb.auth.signOut();
+      location.href = './';
+    });
+
+    async function load() {
+      const { data, error } = await sb.from('orders').select('*').eq('customer_id', user.id).order('created_at', { ascending: false });
+      if (error) return $('#orders').innerHTML = `<p class="msg err">${esc(error.message)}</p>`;
+      $('#orders').innerHTML = !data.length
+        ? '<p class="msg">No orders yet. <a href="estimate.html">Get an estimate</a> to place one.</p>'
+        : `<div class="table"><table>
+            <thead><tr><th>Placed</th><th>File</th><th>Qty</th><th>Estimate</th><th>Status</th><th></th></tr></thead>
+            <tbody>${data.map(o => `<tr>
+              <td>${date(o.created_at)}</td><td>${esc(o.filename)}</td><td>${o.quantity}</td>
+              <td>${priceText(o)}</td><td>${tag(o)}</td><td><a href="track.html?id=${o.id}">Track</a></td>
+            </tr>`).join('')}</tbody></table></div>`;
+    }
+    await load();
+    // Live status: any change to my orders reloads the list.
+    sb.channel('my-orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `customer_id=eq.${user.id}` }, load)
+      .subscribe();
+  }
+}
+</script>
+</body>
+</html>

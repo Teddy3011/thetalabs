@@ -52,7 +52,7 @@ if (header && nav && toggle) {
       }
     }
   }, { rootMargin: '-45% 0px -50% 0px' });
-  for (const a of links) { const s = document.querySelector(a.hash); if (s) spy.observe(s); }
+  for (const a of links) { const s = a.hash && document.querySelector(a.hash); if (s) spy.observe(s); }  // page links have no hash
 }
 
 /* ---------- Intro: title -> print (same choreography as the original scroll intro) -> printed logo flies into
@@ -229,3 +229,9 @@ if (motion) {
     printer.addEventListener('pointerleave', () => { x = y = 0; raf ||= requestAnimationFrame(apply); });
   }
 }
+
+/* ---------- Nav: "Account" instead of "Login" when signed in (supabase-js keeps the session in localStorage) ---------- */
+try {
+  if (Object.keys(localStorage).some(k => /^sb-.+-auth-token$/.test(k)))
+    for (const a of document.querySelectorAll('[data-auth-link]')) { a.textContent = 'Account'; a.href = 'account.html'; }
+} catch (e) {}

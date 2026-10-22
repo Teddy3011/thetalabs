@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sign up | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#090a09">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/styles.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="printers.html">Printers</a></li>
+        <li><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="section app">
+  <div class="wrap narrow">
+    <p class="eyebrow">Account</p>
+    <h1>Create an account</h1>
+    <div id="gate"></div>
+    <form class="form" id="signup">
+      <fieldset>
+        <legend>I want to</legend>
+        <label class="check"><input type="radio" name="role" value="customer" checked> Order prints</label>
+        <label class="check"><input type="radio" name="role" value="printer"> Print jobs on my own printer (needs approval)</label>
+      </fieldset>
+      <label>Full name <input name="full_name" autocomplete="name" maxlength="100" required></label>
+      <label>Email <input type="email" name="email" autocomplete="email" required></label>
+      <label>Password <input type="password" name="password" autocomplete="new-password" minlength="8" required></label>
+      <div class="row">
+        <label>City <input name="city" autocomplete="address-level2" maxlength="80" required></label>
+        <label>ZIP / PIN code <input name="zip" autocomplete="postal-code" maxlength="12"></label>
+        <label>Region
+          <select name="region">
+            <option value="US">United States</option>
+            <option value="IN">India</option>
+          </select>
+        </label>
+      </div>
+      <fieldset id="printer-fields" hidden>
+        <legend>Your printer</legend>
+        <label>Printer model <input name="printer_model" maxlength="100" placeholder="e.g. Bambu Lab A1"></label>
+        <label>Anything we should know <textarea name="notes" rows="3" maxlength="1000" placeholder="Materials, colors, availability"></textarea></label>
+        <p class="small">We review every printer owner before they can see jobs. We only share a customer's city and ZIP, never their address.</p>
+      </fieldset>
+      <button class="btn" type="submit">Create account</button>
+      <p class="msg" id="msg" role="status"></p>
+      <p class="small">Already have an account? <a href="login.html">Log in</a>. See our <a href="privacy.html">privacy notice</a>.</p>
+    </form>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, msg, requireConfig } from './assets/app.js';
+
+const form = $('#signup');
+if (new URLSearchParams(location.search).get('role') === 'printer') form.role.value = 'printer';
+if (Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Calcutta' ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone === 'Asia/Kolkata') form.region.value = 'IN';
+const sync = () => $('#printer-fields').hidden = form.role.value !== 'printer';
+form.addEventListener('change', sync);
+sync();
+
+if (requireConfig($('#gate'))) {
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const f = Object.fromEntries(new FormData(form));
+    const { email, password, ...data } = f;
+    msg($('#msg'), 'Creating your account…');
+    const { data: res, error } = await sb.auth.signUp({
+      email, password,
+      options: { data, emailRedirectTo: location.origin + location.pathname.replace(/signup\.html$/, 'login.html') },
+    });
+    if (error) return msg($('#msg'), error.message, true);
+    if (res.session) return location.href = f.role === 'printer' ? 'printers.html' : 'account.html';
+    form.querySelector('button[type=submit]').disabled = true;
+    msg($('#msg'), 'Check your email for a confirmation link, then log in.');
+  });
+} else {
+  form.hidden = true;
+}
+</script>
+</body>
+</html>
