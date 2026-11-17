@@ -123,7 +123,7 @@ html.motion .drop-bars { animation: bars 0.7s steps(5) infinite; }
 /* ---------- review: the estimate on paper (its own last step) ---------- */
 .back-edit { grid-column: 1 / -1; justify-self: start; }
 #s5:focus { outline: none; }
-.slip-band { padding-block: var(--space-5); background: var(--surface); border-top: 2px solid var(--fg); }
+.slip-band { padding-block: var(--space-3) var(--space-5); }  /* its own page now: same black as the rest, no divider */
 .slip-grid { display: grid; gap: var(--space-4); align-items: start; }
 @media (min-width: 900px) { .slip-grid { grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: var(--space-5); } }
 .slip-next .stats { margin-bottom: var(--space-3); }
@@ -173,6 +173,10 @@ html.motion .drop-bars { animation: bars 0.7s steps(5) infinite; }
 .rp[data-state="printing"] .rp-led { background: var(--accent); }
 html.motion .rp[data-state="printing"] .rp-led { animation: led 0.35s steps(2) infinite; }
 @keyframes led { 50% { opacity: 0.25; } }
+.rp[data-state="printing"] .rp-led { background: var(--accent); }
+html.motion .rp[data-state="printing"] .rp-machine { animation: hum 0.11s steps(2) infinite; }  /* the body buzzes while it prints */
+@keyframes hum { 50% { translate: 0 0.5px; } }
+.rp-slot { z-index: 2; }
 .rp:is([data-state="printed"], [data-state="torn"]) .rp-led { background: var(--accent); }
 .rp-name { font: 0.7rem var(--font-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
 .rp[data-state="empty"] .rp-machine::after { content: "Add a file and your estimate prints here."; position: absolute; left: 0; right: 0; bottom: calc(100% + 0.75rem); text-align: center; font: 0.8rem var(--font-mono); color: var(--muted); }

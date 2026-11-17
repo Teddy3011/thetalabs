@@ -1,6 +1,8 @@
 /* Estimate-slip printer: a small thermal printer that feeds out the estimate on paper you can tear off.
    Plain JS + CSS (estimate.css, ".rp"). It only decorates a slip that is already on the page as ordinary text,
-   so the estimate stays readable if this file fails to load, and with reduced motion nothing animates.
+   so the estimate stays readable if this file fails to load.
+   The paper always feeds out of the slot (it is the point of the thing, and it's a short, slow, one-way movement);
+   with reduced motion the extras are off: no curl as it rises and no printer hum (estimate.css).
 
    The page builds the slip's HTML from a list of lines (title / text / row / divider), the same idea as the `lines`
    prop of React Bits Pro's Receipt Printer, so that component can take this one's place later: see README. */
@@ -21,20 +23,28 @@ export function mount(root) {
   let state = 'empty', html = null, count = 0;  // empty → printing → printed → torn
 
   const set = s => { state = root.dataset.state = s; btn.hidden = s === 'empty' || s === 'printing'; btn.textContent = s === 'torn' ? 'Print a fresh slip' : 'Tear off your estimate'; };
-  const move = (y, ms, steps) => {
-    paper.style.transition = ms && motion ? `transform ${ms}ms ${steps ? `steps(${steps}, end)` : 'cubic-bezier(.16, 1, .3, 1)'}` : 'none';
+  let feed = null;
+  const move = (y, ms) => {
+    feed?.cancel();
+    paper.style.transition = ms ? `transform ${ms}ms cubic-bezier(.16, 1, .3, 1)` : 'none';
     paper.style.transform = y;
   };
 
   function print() {
     if (!html) return;
     slip.innerHTML = html;
-    move('translateY(100%)');
-    paper.offsetHeight;  // commit the hidden position before feeding
+    move('translateY(0)');  // resting place once fed
     set('printing');
-    const rows = Math.min(count || 1, 28), ms = motion ? rows * 85 : 0;
-    move('translateY(0)', ms, rows);  // stepped, so the paper advances a line at a time like a thermal head
-    setTimeout(() => { if (state === 'printing') set('printed'); }, ms + 30);
+    // Feed from inside the printer (100% = fully below the slot) one line at a time: every keyframe is a short
+    // eased pulse, like a thermal printer's stepper motor. The paper leans back a little while it rises.
+    const lines = Math.min(Math.max(count || 1, 6), 28) * 2, ms = Math.min(3200, lines * 55), curl = motion ? 9 : 0;
+    const frames = Array.from({ length: lines + 1 }, (_, i) => {
+      const k = i / lines;
+      return { offset: k, easing: 'cubic-bezier(.2, .9, .3, 1)',
+        transform: `perspective(700px) translateY(${(1 - k) * 100}%) rotateX(${curl * (1 - k) * k * 4}deg)` };
+    });
+    feed = paper.animate(frames, { duration: ms });
+    feed.onfinish = () => { feed = null; if (state === 'printing') set('printed'); };
   }
   function tear() {
     if (state !== 'printed') return;
