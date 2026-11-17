@@ -466,7 +466,7 @@ $('#copy').addEventListener('click', async () => {
     msg($('#msg'), 'Your browser blocked copying. Email info@thetalab3d.shop with your file and the options above.', true);
   }
 });
-function estimateText() {
+function estimateText(withoutNotes) {
   const c = calc(), o = c.o;
   return [
     `File: ${file.name} (I'll attach it to this email)`,
@@ -475,13 +475,19 @@ function estimateText() {
     `Quantity: ${o.quantity}`, `Rush: ${o.rush ? 'yes' : 'no'}`,
     `Estimated weight: ${c.grams} g per part`, `Website estimate: ${range(c.lo, c.hi, c.s.currency)}`,
     `${c.delivery ? 'Delivery' : 'Pickup'}: ${c.place}`,
-    form.notes.value && `Notes: ${form.notes.value}`,
+    form.notes.value && (withoutNotes ? 'Notes: (too long for this email; I will paste them below)' : `Notes: ${form.notes.value}`),
   ].filter(Boolean).join('\n');
 }
 function emailEstimate() {
-  const body = estimateText();
-  location.href = 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
-  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file, then send it: your request reaches us only once you do. Nothing opened? Use Copy estimate and paste it into an email.');
+  const link = body => 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
+  let url = link(estimateText()), cut = false;
+  // Some email apps (classic Outlook among them) ignore links over ~2,000 characters, so very long notes are
+  // left out of the email and the customer pastes them in from Copy estimate instead.
+  if (url.length > 1900) { url = link(estimateText(true)); cut = true; }
+  location.href = url;
+  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file, then send it: your request reaches us only once you do.'
+    + (cut ? ' Your notes were too long to fit in the email link: press Copy estimate and paste them into the email.' : '')
+    + ' Nothing opened? Use Copy estimate and paste it into an email.');
 }
 
 form.addEventListener('submit', async e => {
