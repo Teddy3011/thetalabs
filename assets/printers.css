@@ -1,0 +1,40 @@
+/* Printer-owner page. Loaded after styles.css and home.css (tokens, .kicker, .btn.press, Fraunces headlines). */
+.prn { padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-5); }
+.prn-hero { display: grid; gap: var(--space-4); align-items: start; padding-bottom: var(--space-5); }
+@media (min-width: 900px) { .prn-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-5); } }
+.prn h1 { font-size: clamp(2.8rem, 1rem + 7vw, 6rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: var(--space-2); }
+.prn-lead { max-width: 36rem; margin-block: var(--space-2) var(--space-3); font-size: var(--step-1); color: var(--muted); }
+.prn-note { max-width: 34rem; margin-top: var(--space-2); }
+/* "not yet" reads the same as on the homepage: dashed and muted, never lime */
+.planned { display: inline-block; padding: 0.3rem 0.75rem; border: 1px dashed var(--muted); border-radius: 999px; font: 0.8rem var(--font-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+
+/* how it will work: a ruled, numbered list on bone paper, like the homepage service sheet */
+.prn-steps { display: grid; margin: 0; padding: 1.25rem 1.5rem; list-style: none; counter-reset: step; border-radius: 14px; background: var(--paper); color: var(--ink); box-shadow: 8px 8px 0 var(--accent); }
+@media (max-width: 599.98px) { .prn-steps { box-shadow: 5px 5px 0 var(--accent); padding: 1rem; } }
+.prn-steps li { counter-increment: step; display: grid; grid-template-columns: 2.5rem 1fr; column-gap: 0.75rem; padding-block: 0.9rem; border-top: 1px dashed rgb(0 0 0 / 0.35); }
+.prn-steps li:first-child { border-top: 0; }
+.prn-steps li::before { content: counter(step, decimal-leading-zero); grid-row: span 2; padding-top: 0.35rem; font: 0.8rem var(--font-mono); }
+.prn-steps strong { font: 600 var(--step-2)/1.15 var(--font-display); letter-spacing: -0.01em; font-variation-settings: "SOFT" 50, "WONK" 1; }
+.prn-steps span { grid-column: 2; color: #33362f; }
+
+/* job board: each job is a paper job ticket */
+.board { padding-top: var(--space-4); border-top: 2px solid var(--line); }
+.board + .board { margin-top: var(--space-4); }
+.board h2 { font-size: var(--step-3); letter-spacing: -0.015em; margin-bottom: var(--space-1); }
+.board > .small { margin-bottom: var(--space-2); }
+.prn .jobs { display: grid; gap: var(--space-3); margin-top: var(--space-2); padding: 0 0 var(--layer); list-style: none; grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr)); }
+.prn .job { display: grid; gap: 0.25rem; align-content: start; padding: 1.1rem 1.2rem 1.25rem; border: 0; border-radius: 10px; background: var(--paper); color: var(--ink); box-shadow: 0 var(--layer) 0 #aba593; }
+.prn .job-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-1); }
+.prn .job-pay { font: 600 clamp(1.8rem, 1.3rem + 1.5vw, 2.4rem)/1.05 var(--font-display); letter-spacing: -0.02em; color: var(--ink); font-variation-settings: "SOFT" 50, "WONK" 1; }
+.prn .job-sub { font: 0.75rem var(--font-mono); color: #4a4d44; }
+.prn .job .stats { margin-top: 0.6rem; }
+.prn .job .stats div { border-top: 1px dashed rgb(0 0 0 / 0.3); }
+.prn .job .stats dt { color: #4a4d44; }
+.prn .job .stats dd { color: var(--ink); overflow-wrap: anywhere; }
+.prn .job .tag { color: var(--ink); border-color: var(--ink); }
+.prn .job .tag[data-s="ready"] { background: var(--ink); color: var(--accent); }
+.prn .job .cta-row { margin-top: 0.75rem; }
+.prn .job .btn-ghost { color: var(--ink); border-color: var(--ink); }
+.prn .job .btn-ghost:is(:hover, :focus-visible) { border-color: var(--ink); background: rgb(0 0 0 / 0.06); }
+.prn .job :focus-visible { outline-color: var(--ink); }
+.prn .jobs-empty { padding: 1.25rem; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }

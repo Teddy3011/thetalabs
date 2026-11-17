@@ -10,7 +10,10 @@
 <meta name="color-scheme" content="dark">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/printers.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
 </head>
 <body>
@@ -23,6 +26,7 @@
     </a>
     <nav class="site-nav" aria-label="Main">
       <ul>
+        <li><a href="./">Home</a></li>
         <li><a href="estimate.html">Estimate</a></li>
         <li><a href="printers.html" aria-current="page">Printers</a></li>
         <li hidden><a href="login.html" data-auth-link>Login</a></li>
@@ -31,27 +35,45 @@
   </div>
 </header>
 
-<main id="main" class="section app">
+<main id="main" class="prn">
   <div class="wrap">
-    <p class="eyebrow">Printer owners</p>
-    <h1>Print local jobs.</h1>
-    <div id="gate"></div>
-    <div id="intro">
-      <!-- OWNER-INPUT: update this once the network is taking jobs. The homepage says the same thing ("Planned"). -->
-      <p class="section-lead">The printer network is planned and isn't taking jobs yet. It will start in Hyderabad. Own a 3D printer near
-        Tempe or Hyderabad? Apply now, and once the network opens and we approve you, you'll see open jobs with their size,
-        weight and payout. Accept one, download the file, print it and mark it ready.</p>
-      <div class="cta-row">
-        <a class="btn" href="signup.html?role=printer">Apply as a printer</a>
-        <a class="btn btn-ghost" href="login.html?next=printers.html">Log in</a>
+    <section class="prn-hero" aria-labelledby="prn-title">
+      <div>
+        <p class="kicker">Printer owners</p>
+        <h1 id="prn-title">Print local jobs.</h1>
+        <!-- OWNER-INPUT: update this once the network is taking jobs. The homepage says the same thing ("Planned"). -->
+        <p class="planned">Planned · not taking jobs yet</p>
+        <p class="prn-lead">The printer network will start in Hyderabad, India. Own a 3D printer near Tempe or Hyderabad? Once the
+          network opens and we approve you, you'll see paid print jobs near you and choose the ones you want.</p>
+        <div class="cta-row" id="apply">
+          <a class="btn press" href="signup.html?role=printer">Apply as a printer</a>
+          <a class="btn btn-ghost" href="login.html?next=printers.html">Log in</a>
+        </div>
+        <div class="cta-row" id="interest" hidden>
+          <a class="btn press" href="mailto:info@thetalab3d.shop?subject=Printer%20network%20interest&body=Printer%20model%3A%0ACity%3A%0AMaterials%20and%20colors%3A">Email us you're interested</a>
+        </div>
+        <p class="small prn-note" id="interest-note" hidden>Applications open here once accounts go live. Until then, email us your printer model and city and we'll be in touch.</p>
       </div>
-    </div>
+
+      <ol class="prn-steps" aria-label="How it will work">
+        <li><strong>Apply</strong><span>Tell us your printer model, where you are, and what materials and colors you can print.</span></li>
+        <li><strong>Get approved</strong><span>We review every printer owner before they can see jobs.</span></li>
+        <li><strong>Pick jobs near you</strong><span>Each job shows its part size, weight, material and payout. Accept the ones that fit your printer.</span></li>
+        <li><strong>Print and hand over</strong><span>Download the file, print it and mark it ready. You only ever see the customer's city and ZIP, never their address.</span></li>
+      </ol>
+    </section>
+
     <p class="msg" id="msg" role="status"></p>
     <div id="board" hidden>
-      <h2>My jobs</h2>
-      <ul class="jobs" id="mine"></ul>
-      <h2>Open jobs</h2>
-      <ul class="jobs" id="open"></ul>
+      <section class="board" aria-labelledby="mine-title">
+        <h2 id="mine-title">Your jobs</h2>
+        <ul class="jobs" id="mine"></ul>
+      </section>
+      <section class="board" aria-labelledby="open-title">
+        <h2 id="open-title">Open jobs</h2>
+        <p class="small">Nearest first: same ZIP, then same city.</p>
+        <ul class="jobs" id="open"></ul>
+      </section>
     </div>
   </div>
 </main>
@@ -61,15 +83,16 @@
 </footer>
 
 <script type="module">
-import { sb, configured, $, esc, money, date, sizeText, tag, materialText, colorText, msg, requireConfig, getUser, getProfile } from './assets/app.js';
+import { sb, configured, $, esc, money, date, sizeText, tag, materialText, colorText, msg, getUser, getProfile } from './assets/app.js';
 
 const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up / delivered'] };
 
-if (!configured) $('#intro .cta-row').hidden = true;  // nothing to apply to until accounts are live
-if (requireConfig($('#gate'))) {
+// Until accounts are live there is nothing to apply to, so interested owners email instead.
+if (!configured) { $('#apply').hidden = true; $('#interest').hidden = $('#interest-note').hidden = false; }
+if (configured) {
   const user = await getUser();
   const profile = user && await getProfile(user);
-  if (user) $('#intro').hidden = true;
+  if (user) $('#apply').hidden = true;
 
   if (profile && profile.role === 'customer') {
     msg($('#msg'), 'This is a customer account. To print jobs, sign up as a printer with a different email, or email info@thetalab3d.shop.');
@@ -91,7 +114,7 @@ if (requireConfig($('#gate'))) {
 
     const card = (o, actions) => `<li class="job">
       <div class="job-head"><span class="job-pay">${money(o.payout, o.currency)}</span>${tag(o)}</div>
-      <span class="small">Payout · posted ${date(o.created_at)}</span>
+      <span class="job-sub">Your payout · posted ${date(o.created_at)}</span>
       <dl class="stats">
         <div><dt>Part size</dt><dd>${sizeText(o)}</dd></div>
         <div><dt>Weight</dt><dd>${o.est_weight_g} g × ${o.quantity}</dd></div>
@@ -112,12 +135,12 @@ if (requireConfig($('#gate'))) {
       if (error) return msg($('#msg'), error.message, true);
       const open = data.filter(o => o.status === 'open').sort((a, b) => rank(a) - rank(b) || a.created_at.localeCompare(b.created_at));
       const mine = data.filter(o => o.printer_id === user.id);
-      $('#open').innerHTML = open.map(o => card(o, `<button class="btn btn-sm" data-accept="${o.id}">Accept job</button>`)).join('')
-        || '<li class="small">No open jobs right now. This list updates live.</li>';
+      $('#open').innerHTML = open.map(o => card(o, `<button class="btn btn-sm press" data-accept="${o.id}">Accept job</button>`)).join('')
+        || '<li class="jobs-empty">No open jobs right now. This list updates live.</li>';
       $('#mine').innerHTML = mine.map(o => card(o, `
         <button class="btn btn-sm btn-ghost" data-download="${o.id}">Download file</button>
-        <button class="btn btn-sm" data-status="${o.id}" data-to="${NEXT[o.status][0]}">${NEXT[o.status][1]}</button>`)).join('')
-        || '<li class="small">You have no jobs in progress.</li>';
+        <button class="btn btn-sm press" data-status="${o.id}" data-to="${NEXT[o.status][0]}">${NEXT[o.status][1]}</button>`)).join('')
+        || '<li class="jobs-empty">You have no jobs in progress.</li>';
       jobs = Object.fromEntries(data.map(o => [o.id, o]));
     }
 
