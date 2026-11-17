@@ -710,6 +710,8 @@ html.motion .reveal.is-in { opacity: 1; transform: none; }
   min-height: 44px; padding: 0.6rem 0.75rem; font: inherit; font-size: var(--step-0); color: var(--fg);
   background: var(--surface-2); border: 1px solid var(--field-line); border-radius: var(--radius);
 }
+/* fill the column: a text input's default width (~20 characters) is wider than a narrow grid column and overlaps the next one */
+.form :is(input, select, textarea) { width: 100%; min-width: 0; }
 :is(.form, .table) :is(input, select, textarea):focus-visible { border-color: var(--accent); outline-offset: 0; }
 :is(.form, .table) :is(input, select, textarea):hover { border-color: var(--fg); }
 /* dropdowns: same dark field + lime chevron everywhere; the open list uses the site colors too */
