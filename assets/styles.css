@@ -23,7 +23,7 @@
 }
 
 :root {
-  --bg: #090a09;
+  --bg: #000;  /* pitch black; the page has no backdrop drawing */
   --surface: #111311;
   --surface-2: #171917;
   --line: #292c28;
@@ -76,17 +76,6 @@ body {
   font-size: var(--step-0);
   line-height: 1.6;
   overflow-x: clip;
-}
-
-/* faint engineering-drawing backdrop */
-body::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background: url("blueprint.svg") top center / 62.5rem auto repeat-y;  /* 1000px at the default size, scales on large screens */
-  opacity: 0.07;
-  pointer-events: none;
 }
 
 img, svg { display: block; max-width: 100%; }
@@ -166,7 +155,7 @@ html.motion .btn:is(:hover, :focus-visible) { transform: translateY(-2px); }
 /* The blur lives on a pseudo-element: backdrop-filter on the header itself would trap the fixed menu panel. */
 .site-header::before {
   content: ""; position: absolute; inset: 0; z-index: -1;
-  background: rgb(9 10 9 / 0.86); backdrop-filter: blur(10px);
+  background: rgb(0 0 0 / 0.86); backdrop-filter: blur(10px);
 }
 .scroll-progress { display: none; }
 @supports (animation-timeline: scroll()) {
