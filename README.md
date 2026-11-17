@@ -12,6 +12,10 @@ site.config.json         current values of business name, email, prices, turnaro
 scripts/set-config.mjs   changes one of those values everywhere (optional helper, never deployed logic)
 assets/styles.css        all styles (colour/type/spacing tokens at the top)
 assets/script.js         all enhancements: menu, intro, pricing switch, reveals, parallax, label decrypt
+assets/home.css          "Ideas become objects" design language: shared tokens first, then the homepage sections
+assets/estimate.css      estimate page: job-ticket steps, option buttons, live price, estimate slip and its printer
+assets/receipt.js        estimate-slip printer (paper feed, tear-off). Decorates a slip that is already plain text on the page
+assets/home.js           homepage-only: draws the layer-by-layer objects on canvas (hero demo, gallery, process)
 assets/                  images (WebP), blueprint.svg, og-image.png, fonts/
 *.png (root)             original artwork, kept as source files; the site loads the WebP versions in assets/
 ```
@@ -132,3 +136,31 @@ Have them reviewed (by you, and ideally a qualified adviser) before relying on t
 - **FAQ:** native `<details>`; the smooth open uses CSS `::details-content` (Chromium 131+, other browsers open instantly).
 - **Fonts:** Space Grotesk and Space Mono, self-hosted under the SIL Open Font License (licences in `assets/fonts/`).
 - `favicon-16.png`, `favicon-32.png` and `favicon-192.png` are not referenced by any page; harmless to keep.
+
+## Receipt printer (estimate page)
+
+The slip at the end of the estimate page is plain HTML built from the live estimate. `assets/receipt.js` adds the
+printer, the paper feed and the tear-off; without it (or with reduced motion) the slip is simply shown.
+
+It is a native stand-in for **React Bits Pro's Receipt Printer**, which could not be installed because:
+
+1. it needs a licence key (`REACTBITS_LICENSE_KEY`), which is not set on this machine, and
+2. it is a React component installed through the shadcn CLI, and this site has no React, no `package.json`
+   dependencies and no build step (GitHub Pages serves the committed files as they are).
+
+To swap it in later, without rebuilding the site:
+
+1. Make a small React project in a subfolder, for example `islands/receipt/` (Vite + React), and run
+   `npx shadcn@latest init` there so it has a `components.json`.
+2. Put the key in `islands/receipt/.env.local` as `REACTBITS_LICENSE_KEY=...`. Never commit that file and never
+   reference the key from site code: it is only read by the CLI at install time.
+3. Add the two registries (`@reactbits-starter`, `@reactbits-pro`) to `components.json` exactly as shown at
+   https://pro.reactbits.dev/docs/installation (the header reads the key from the environment variable).
+4. `npx shadcn@latest add @reactbits-starter/receipt-printer-tw` (Tailwind), or `receipt-printer-css` for the
+   plain-CSS variant, which avoids adding Tailwind.
+5. Build it as one script (`vite build` in library mode) into `assets/receipt-island.js` and commit that file, so
+   GitHub Pages still needs no build.
+6. In `estimate.html`, mount it in `#printer` and pass the same data the slip uses now: the component's `lines`
+   prop takes title / text / row / divider lines, which is the shape `render()` already builds. Use
+   `autoplay={false}`, `barcode={false}`, `tax={0}`, and `paperColor="#efeadd"`. Keep the current slip as the
+   fallback for when the script fails to load.

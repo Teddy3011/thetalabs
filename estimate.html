@@ -11,6 +11,17 @@
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/estimate.css">
+<script>
+// .motion enables animation (off for reduced motion). Add ?motion to the URL to force it on.
+(() => {
+  const d = document.documentElement;  // no .js class here: this page has no menu script, so the nav stays a plain list
+  try {
+    if (new URLSearchParams(location.search).has('motion') || !matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('motion');
+  } catch (e) {}
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
 </head>
 <body>
@@ -23,6 +34,7 @@
     </a>
     <nav class="site-nav" aria-label="Main">
       <ul>
+        <li><a href="./">Home</a></li>
         <li><a href="estimate.html" aria-current="page">Estimate</a></li>
         <li><a href="printers.html">Printers</a></li>
         <li hidden><a href="login.html" data-auth-link>Login</a></li>
@@ -31,93 +43,163 @@
   </div>
 </header>
 
-<main id="main" class="section app">
+<main id="main" class="est">
   <div class="wrap">
-    <p class="eyebrow">Instant estimate</p>
-    <h1>Drop in your STL.</h1>
-    <p class="section-lead">Your file is measured in your browser. Nothing is uploaded until you place an order.</p>
+    <div class="est-head">
+      <p class="kicker">Instant estimate</p>
+      <h1>Let's price your part.</h1>
+      <p class="est-lead">Add your file, pick how you want it made, and watch the estimate build. Your file is measured in your browser. Nothing is uploaded until you send a request.</p>
+    </div>
 
-    <div class="cols">
-      <div>
-        <label class="drop" id="drop">
-          <input type="file" id="file" accept=".stl" class="sr-only">
-          <strong>Choose or drop an .stl file</strong>
-          <span class="small">Up to 50 MB · .stl from any CAD or 3D app</span>
-        </label>
-        <p class="msg err" id="file-msg" role="alert"></p>
-        <div class="quote" aria-live="polite">
-          <p class="quote-label">Your estimate</p>
-          <p class="quote-price" id="quote-price">Upload a file to see your price</p>
-          <p class="small" id="quote-meta"></p>
-        </div>
-        <p class="small" id="nostl">No STL file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
-        <canvas class="viewer" id="viewer" hidden aria-label="3D preview of your part. Drag to rotate."></canvas>
-        <dl class="stats" id="geo" hidden></dl>
+    <div class="est-grid">
+      <!-- left: the job ticket, one ruled step after another -->
+      <div class="ticket">
+        <section class="tstep" aria-labelledby="s1">
+          <span class="tstep-n" aria-hidden="true">1</span>
+          <div>
+            <h2 id="s1">Your file</h2>
+            <div class="dropzone" id="drop" data-state="idle">
+              <input type="file" id="file" accept=".stl" class="sr-only" aria-describedby="file-help file-msg">
+              <label class="drop-idle" for="file">
+                <strong>Drop your STL file here</strong>
+                <span class="btn btn-sm press">or choose a file</span>
+                <span class="drop-help" id="file-help">STL files only · up to 50 MB · most CAD and 3D apps can export one</span>
+              </label>
+              <p class="drop-loading" role="status"><span class="drop-bars" aria-hidden="true"></span>Measuring your part…</p>
+              <div class="drop-ready">
+                <p><strong id="file-name"></strong><span id="file-size"></span></p>
+                <div class="cta-row">
+                  <label class="btn btn-ghost btn-sm" for="file">Replace</label>
+                  <button class="btn btn-ghost btn-sm" type="button" id="remove">Remove</button>
+                </div>
+              </div>
+            </div>
+            <p class="msg err" id="file-msg" role="alert"></p>
+            <p class="small tstep-note">No 3D file? <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email us</a> a sketch, photo or measurements instead.</p>
+          </div>
+        </section>
+
+        <form id="opts" class="ticket-form" novalidate>
+          <section class="tstep" aria-labelledby="s3">
+            <span class="tstep-n" aria-hidden="true">2</span>
+            <div>
+              <h2 id="s3">How you want it made</h2>
+
+              <fieldset class="opt">
+                <legend>Material</legend>
+                <div class="choices" id="materials"></div>
+              </fieldset>
+
+              <fieldset class="opt">
+                <legend>How many colors?</legend>
+                <div class="choices seg">
+                  <label class="choice"><input type="radio" name="colors" value="1" checked><span>1</span></label>
+                  <label class="choice"><input type="radio" name="colors" value="2"><span>2</span></label>
+                  <label class="choice"><input type="radio" name="colors" value="3"><span>3</span></label>
+                  <label class="choice"><input type="radio" name="colors" value="4"><span>4</span></label>
+                </div>
+                <div id="color-picks"></div>
+                <p class="small" id="color-note" hidden>More than one color? Use the Notes box in step 3 to say which part gets which color.</p>
+              </fieldset>
+
+              <fieldset class="opt">
+                <legend>Strength</legend>
+                <p class="small opt-help">How solid the inside of your part is. Printed parts are rarely solid all the way through, which saves material and time. Standard suits most parts.</p>
+                <div class="choices">
+                  <label class="choice"><input type="radio" name="infill" value="10" data-label="Light"><span><strong>Light</strong><small>Display pieces</small></span></label>
+                  <label class="choice"><input type="radio" name="infill" value="15" data-label="Standard" checked><span><strong>Standard</strong><small>Most parts</small></span></label>
+                  <label class="choice"><input type="radio" name="infill" value="25" data-label="Sturdy"><span><strong>Sturdy</strong><small>Everyday use</small></span></label>
+                  <label class="choice"><input type="radio" name="infill" value="50" data-label="Strong"><span><strong>Strong</strong><small>Carries load</small></span></label>
+                  <label class="choice"><input type="radio" name="infill" value="100" data-label="Solid"><span><strong>Solid</strong><small>Maximum strength</small></span></label>
+                </div>
+              </fieldset>
+
+              <div class="opt-row">
+                <div class="opt">
+                  <label class="opt-label" for="quantity">Quantity</label>
+                  <div class="qty">
+                    <button type="button" data-step="-1" aria-label="One fewer">−</button>
+                    <input type="number" id="quantity" name="quantity" min="1" max="50" value="1" required inputmode="numeric">
+                    <button type="button" data-step="1" aria-label="One more">+</button>
+                  </div>
+                </div>
+                <fieldset class="opt">
+                  <legend>Where are you?</legend>
+                  <div class="choices seg">
+                    <label class="choice"><input type="radio" name="region" value="US" checked><span>United States</span></label>
+                    <label class="choice"><input type="radio" name="region" value="IN"><span>India</span></label>
+                  </div>
+                  <p class="small" id="region-note" hidden>India is a developing market for us: orders there are by inquiry.</p>
+                </fieldset>
+              </div>
+
+              <label class="choice rush"><input type="checkbox" name="rush"><span><strong>Rush: ready within 24 hours (+<span id="rush-pct">25</span>%)</strong><small>We confirm before printing that we can make it.</small></span></label>
+            </div>
+          </section>
+
+          <section class="tstep" aria-labelledby="s4">
+            <span class="tstep-n" aria-hidden="true">3</span>
+            <div>
+              <h2 id="s4">Getting it to you</h2>
+              <fieldset class="opt">
+                <legend class="sr-only">Pickup or delivery</legend>
+                <div class="choices seg">
+                  <label class="choice"><input type="radio" name="fulfillment" value="pickup" checked><span><strong>Pickup</strong><small>Near ASU, by appointment</small></span></label>
+                  <label class="choice"><input type="radio" name="fulfillment" value="delivery"><span><strong>Local delivery</strong><small>Arranged with you</small></span></label>
+                </div>
+              </fieldset>
+              <div class="opt-row">
+                <label class="field">City <input name="city" maxlength="80" required autocomplete="address-level2"></label>
+                <label class="field">ZIP / PIN <input name="zip" maxlength="12" autocomplete="postal-code"></label>
+              </div>
+              <label class="field">Notes <textarea name="notes" rows="3" maxlength="1000" placeholder="Where each color goes, your deadline, anything else"></textarea></label>
+              <!-- OWNER-INPUT: confirm turnaround and pickup area -->
+              <p class="small">Most small parts are ready in 2–4 days. Pickup is near ASU's Tempe campus by appointment, or we can deliver locally.</p>
+            </div>
+          </section>
+        </form>
       </div>
 
-      <form class="form" id="opts">
-        <div class="row">
-          <label>Region
-            <select name="region">
-              <option value="US">United States</option>
-              <option value="IN">India</option>
-            </select>
-          </label>
-          <label>Quantity <input type="number" name="quantity" min="1" max="50" value="1" required></label>
+      <!-- right: the part and its live price stay in view while options change -->
+      <aside class="est-side" aria-label="Your part and estimate">
+        <div class="stage part-stage">
+          <canvas class="viewer" id="viewer" hidden tabindex="0" aria-label="3D preview of your part. Drag, or use the arrow keys, to turn it."></canvas>
+          <p class="stage-empty">Your part appears here once you add a file.</p>
+          <p class="stage-caption" id="viewer-help" hidden>Drag to turn your part · shown in your first color</p>
+          <dl class="dims" id="geo" hidden></dl>
         </div>
-        <label>Material <select name="material"></select></label>
-        <div class="row">
-          <label>Colors
-            <select name="colors">
-              <option value="1">1 color</option>
-              <option value="2">2 colors</option>
-              <option value="3">3 colors</option>
-              <option value="4">4 colors</option>
-            </select>
-          </label>
-          <label>Strength
-            <select name="infill">
-              <option value="10">Light: display pieces</option>
-              <option value="15" selected>Standard: most parts</option>
-              <option value="25">Sturdy: everyday use</option>
-              <option value="50">Strong: carries load</option>
-              <option value="100">Solid: maximum strength</option>
-            </select>
-          </label>
+        <div class="price-ticket is-empty" id="quote" aria-live="polite">
+          <p class="price-ticket-label">Your estimate</p>
+          <p class="price-ticket-price" id="quote-price">Add a file to see your price</p>
+          <p class="price-ticket-meta" id="quote-meta"></p>
+          <p class="price-ticket-note">An estimate, not a final price. We confirm the final quote by email before anything is printed.</p>
         </div>
-        <div class="row" id="color-picks"></div>
-        <label class="check"><input type="checkbox" name="rush"> <span>Rush: ready within 24 hours (+<span id="rush-pct">25</span>%). We confirm before printing that we can make it.</span></label>
-
-        <dl class="stats" id="price"></dl>
-
-        <fieldset>
-          <legend>Order</legend>
-          <div class="row">
-            <label>Pickup or delivery
-              <select name="fulfillment">
-                <option value="pickup">Pickup</option>
-                <option value="delivery">Local delivery</option>
-              </select>
-            </label>
-            <label>City <input name="city" maxlength="80" required></label>
-            <label>ZIP / PIN <input name="zip" maxlength="12"></label>
-          </div>
-          <label>Notes <textarea name="notes" rows="3" maxlength="1000" placeholder="Colors, deadline, anything else"></textarea></label>
-          <!-- OWNER-INPUT: confirm turnaround and pickup area -->
-          <p class="small">Most small parts are ready in 2–4 days. Pickup is near ASU's Tempe campus by appointment, or we can deliver locally.
-            We confirm the final price by email and you pay on pickup or by invoice. No card needed now.</p>
-          <div class="cta-row">
-            <button class="btn" type="submit" id="place" disabled>Place order request</button>
-            <button class="btn btn-ghost" type="button" id="copy" hidden disabled>Copy estimate</button>
-          </div>
-          <p class="msg" id="msg" role="status"></p>
-        </fieldset>
-      </form>
+      </aside>
     </div>
   </div>
+
+  <!-- the estimate comes out of a printer as a slip; the real action sits beside it and never depends on it -->
+  <section class="slip-band" id="review" aria-labelledby="s5">
+    <div class="wrap slip-grid">
+      <div class="slip-printer" id="printer">
+        <div class="slip" id="slip"><p class="slip-text">Add a file and your estimate prints here.</p></div>
+      </div>
+      <div class="slip-next">
+        <p class="kicker">Review</p>
+        <h2 id="s5">Your estimate, on paper.</h2>
+        <dl class="stats" id="price"></dl>
+        <ol class="next-list" id="next-list"></ol>
+        <div class="cta-row">
+          <button class="btn press" type="submit" form="opts" id="place" disabled>Place order request</button>
+          <button class="btn btn-ghost" type="button" id="copy" hidden disabled>Copy estimate</button>
+        </div>
+        <p class="msg" id="msg" role="status"></p>
+      </div>
+    </div>
+  </section>
 </main>
 
-<a class="quote-bar" id="quote-bar" href="#place" hidden><span id="quote-bar-price"></span><span>Review &amp; order ↓</span></a>
+<a class="quote-bar" id="quote-bar" href="#review" hidden><span id="quote-bar-price"></span><span>Review estimate ↓</span></a>
 
 <footer class="site-footer">
   <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
@@ -126,12 +208,11 @@
 <script type="module">
 import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
-import { enhanceSelect } from './assets/combobox.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
 const BED_MM = 256;                  // Bambu Lab A1
 const form = $('#opts');
-let settings = DEFAULT_SETTINGS, materials = DEFAULT_MATERIALS, file = null, geo = null, user = null;
+let settings = DEFAULT_SETTINGS, materials = DEFAULT_MATERIALS, file = null, geo = null, user = null, redrawPart = null;
 
 const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') form.region.value = 'IN';
@@ -149,22 +230,36 @@ if (configured) {
   }
 }
 
-form.material.innerHTML = materials.map(m => `<option value="${esc(m.id)}">${esc(m.name)}</option>`).join('');
-const material = () => materials.find(m => m.id === form.material.value);
+// The estimate slip is ordinary text on the page. The printer (assets/receipt.js) only decorates it,
+// so if that file fails to load the slip still shows, just without the paper feed and tear-off.
+const slipHtml = lines => lines.map(l =>
+  l.type === 'title' ? `<p class="slip-title">${esc(l.text)}</p>`
+  : l.type === 'text' ? `<p class="slip-text">${esc(l.text)}</p>`
+  : l.type === 'divider' ? '<hr class="slip-rule">'
+  : `<p class="slip-row${l.type === 'total' ? ' slip-total' : ''}"><span>${esc(l.label)}</span><span>${esc(l.value)}</span></p>`).join('');
+const printer = await import('./assets/receipt.js').then(m => m.mount($('#printer'))).catch(() => null);
 
-// One color picker per color slot; keeps earlier picks when the count changes.
+// "PLA (standard, most parts)" → name "PLA", note "Standard, most parts"
+const shortName = m => m.name.split(' (')[0];
+const matNote = m => { const n = (m.name.match(/\((.*)\)/) || [])[1] || ''; return n && n[0].toUpperCase() + n.slice(1); };
+$('#materials').innerHTML = materials.map((m, i) => `<label class="choice"><input type="radio" name="material" value="${esc(m.id)}" ${i ? '' : 'checked'}>
+  <span><strong>${esc(shortName(m))}${+m.price_factor > 1 ? ` <em>+${Math.round((m.price_factor - 1) * 100)}%</em>` : ''}</strong><small>${esc(matNote(m))}</small></span></label>`).join('');
+const material = () => materials.find(m => m.id === form.material.value) || materials[0];
+const strengthLabel = () => form.querySelector('input[name=infill]:checked').dataset.label;
+const chosenColors = () => [...$('#color-picks').querySelectorAll('input:checked')].map(i => i.value);
+
+// One row of swatches per color slot; keeps earlier picks when the count changes.
 function colorPicks() {
-  const n = +form.colors.value, box = $('#color-picks');
-  const keep = [...box.querySelectorAll('select')].map(s => s.value);
-  const defaults = ['Black', 'White', 'Lime', 'Red'];
-  box.innerHTML = Array.from({ length: n }, (_, i) => `<label>${n > 1 ? `Color ${i + 1}` : 'Color'}
-    <select name="color">${Object.keys(COLORS).map(c => `<option ${c === (keep[i] || defaults[i]) ? 'selected' : ''}>${c}</option>`).join('')}</select>
-  </label>`).join('');
-  for (const s of box.querySelectorAll('select')) enhanceSelect(s, { swatches: COLORS });
+  const n = +form.colors.value, box = $('#color-picks'), keep = chosenColors(), defaults = ['Black', 'White', 'Lime', 'Red'];
+  box.innerHTML = Array.from({ length: n }, (_, i) => {
+    const cur = keep[i] || defaults[i];
+    return `<fieldset class="picks dots swatch-row"><legend>${n > 1 ? `Color ${i + 1}` : 'Color'}: <b>${cur}</b></legend>
+      ${Object.entries(COLORS).map(([c, hex]) => `<label title="${c}"><input type="radio" name="color${i}" value="${c}" ${c === cur ? 'checked' : ''}><span style="--c:${hex}"><i class="sr-only">${c}</i></span></label>`).join('')}
+    </fieldset>`;
+  }).join('');
+  $('#color-note').hidden = n < 2;
 }
-form.colors.addEventListener('change', () => { colorPicks(); render(); });
 colorPicks();
-for (const s of form.querySelectorAll('select')) enhanceSelect(s);  // themed dropdowns (assets/combobox.js)
 
 const opts = () => ({
   region: form.region.value,
@@ -173,85 +268,120 @@ const opts = () => ({
   infill: +form.infill.value,
   rush: form.rush.checked,
   material: form.material.value,
-  color_choices: [...$('#color-picks').querySelectorAll('select')].map(s => s.value),
+  color_choices: chosenColors(),
 });
-
-function render() {
+// Everything the page shows about the price comes from this one calculation.
+function calc() {
   const o = opts(), s = settings[o.region], m = material();
-  $('#rush-pct').textContent = +s.rush_pct;
-  $('#place').disabled = $('#copy').disabled = !geo;
-  $('#quote-bar').hidden = !geo;
-  $('#quote-price').classList.toggle('is-empty', !geo);
-  if (!geo) {
-    $('#price').innerHTML = $('#quote-meta').textContent = '';
-    $('#quote-price').textContent = 'Upload a file to see your price';
-    return;
-  }
   const grams = estimateWeight(geo, o.infill, m.density);
   const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
-  $('#quote-price').textContent = $('#quote-bar-price').textContent = range(lo, hi, s.currency);
-  $('#quote-meta').textContent = `${o.quantity} × ${grams} g · ${geo.size.map(Math.round).join(' × ')} mm · ${m.name.split(' ')[0]} · ${o.color_choices.join(', ')}`;
-  $('#price').innerHTML = `
-    <div><dt>Weight per part</dt><dd>${grams} g</dd></div>
-    <div><dt>Total ${esc(m.name.split(' ')[0])}</dt><dd>${Math.round(grams * o.quantity * 10) / 10} g</dd></div>
-    <div><dt>Rate</dt><dd>${money(s.rate_min * m.price_factor, s.currency)}–${money(s.rate_max * m.price_factor, s.currency)} / g</dd></div>
-    <div><dt>Colors</dt><dd>${o.color_choices.map(esc).join(', ')}</dd></div>
-    <div><dt>Minimum order</dt><dd>${money(s.minimum, s.currency)}</dd></div>
-    ${o.colors > 1 ? `<div><dt>Multicolor</dt><dd>+${money(s.multicolor, s.currency)}</dd></div>` : ''}
-    ${o.rush ? `<div><dt>Rush</dt><dd>+${+s.rush_pct}%</dd></div>` : ''}
-    <div class="total"><dt>Estimate</dt><dd>${range(lo, hi, s.currency)}</dd></div>`;
+  return { o, s, m, grams, lo, hi, total: Math.round(grams * o.quantity * 10) / 10,
+    rate: `${money(s.rate_min * m.price_factor, s.currency)}–${money(s.rate_max * m.price_factor, s.currency)} / g`,
+    place: `${form.city.value} ${form.zip.value}`.trim() || 'Tempe', delivery: form.fulfillment.value === 'delivery' };
 }
-form.addEventListener('input', render);
+
+function render() {
+  const o = opts(), s = settings[o.region];
+  $('#rush-pct').textContent = +s.rush_pct;
+  $('#region-note').hidden = o.region !== 'IN';
+  $('#place').disabled = $('#copy').disabled = !geo;
+  $('#quote-bar').hidden = !geo;
+  $('#quote').classList.toggle('is-empty', !geo);
+  if (!geo) {
+    $('#price').innerHTML = $('#quote-meta').textContent = '';
+    $('#quote-price').textContent = 'Add a file to see your price';
+    if (printer) printer.update(null); else $('#slip').innerHTML = '<p class="slip-text">Add a file and your estimate prints here.</p>';
+    return;
+  }
+  const c = calc(), cur = c.s.currency, mat = shortName(c.m), price = range(c.lo, c.hi, cur);
+  $('#quote-price').textContent = $('#quote-bar-price').textContent = price;
+  $('#quote-meta').textContent = `${o.quantity} × ${c.grams} g · ${mat} · ${o.color_choices.join(', ')} · ${strengthLabel()}`;
+  $('#price').innerHTML = `
+    <div><dt>Weight per part</dt><dd>${c.grams} g</dd></div>
+    <div><dt>Rate for ${esc(mat)}</dt><dd>${c.rate}</dd></div>
+    <div><dt>Minimum order</dt><dd>${money(c.s.minimum, cur)}</dd></div>
+    ${o.colors > 1 ? `<div><dt>Multicolor</dt><dd>+${money(c.s.multicolor, cur)}</dd></div>` : ''}
+    ${o.rush ? `<div><dt>Rush</dt><dd>+${+c.s.rush_pct}%</dd></div>` : ''}
+    <div class="total"><dt>Estimate</dt><dd>${price}</dd></div>`;
+  const lines = [
+    { type: 'title', text: 'Theta Labs 3D' },
+    { type: 'text', text: 'ESTIMATE SUMMARY' },
+    { type: 'text', text: new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) },
+    { type: 'divider' },
+    { type: 'row', label: 'File', value: file.name },
+    { type: 'row', label: 'Size', value: `${geo.size.map(d => d.toFixed(1)).join(' × ')} mm` },
+    { type: 'row', label: 'Material', value: mat },
+    { type: 'row', label: 'Colors', value: o.color_choices.join(', ') },
+    { type: 'row', label: 'Strength', value: `${strengthLabel()} (${o.infill}% infill)` },
+    { type: 'row', label: 'Quantity', value: String(o.quantity) },
+    { type: 'row', label: c.delivery ? 'Local delivery' : 'Pickup', value: c.place },
+    { type: 'divider' },
+    { type: 'row', label: 'Weight per part', value: `${c.grams} g` },
+    { type: 'row', label: `Total ${mat}`, value: `${c.total} g` },
+    { type: 'row', label: 'Rate', value: c.rate },
+    { type: 'row', label: 'Minimum order', value: money(c.s.minimum, cur) },
+    o.colors > 1 && { type: 'row', label: 'Multicolor', value: `+${money(c.s.multicolor, cur)}` },
+    o.rush && { type: 'row', label: 'Rush', value: `+${+c.s.rush_pct}%` },
+    { type: 'divider' },
+    { type: 'total', label: 'Estimate', value: price },
+    { type: 'text', text: 'This is an estimate, not a receipt. We confirm the final price by email before anything is printed. No payment has been taken.' },
+  ].filter(Boolean);
+  if (printer) printer.update(slipHtml(lines), lines.length); else $('#slip').innerHTML = slipHtml(lines);
+}
+form.addEventListener('input', e => {
+  if (e.target.name === 'colors') colorPicks();
+  if (/^color\d$/.test(e.target.name)) e.target.closest('fieldset').querySelector('b').textContent = e.target.value;
+  if (/^colors?\d?$/.test(e.target.name) && redrawPart) redrawPart();
+  render();
+});
+for (const b of form.querySelectorAll('.qty button')) b.addEventListener('click', () => {
+  form.quantity.value = Math.min(50, Math.max(1, (parseInt(form.quantity.value) || 1) + +b.dataset.step));
+  render();
+});
 render();
 
-// File problems show under the upload box and clear the previous part, so no stale price stays on screen.
-function fileError(text) {
-  geo = file = null;
-  $('#drop').classList.remove('has-file');
-  $('#drop strong').textContent = 'Choose or drop an .stl file';
-  $('#drop .small').textContent = 'Up to 50 MB · .stl from any CAD or 3D app';
-  $('#nostl').hidden = false;
-  $('#viewer').hidden = $('#geo').hidden = true;
-  msg($('#file-msg'), text, true);
+// ---------- file: idle → loading → ready. Problems show under the box and clear the previous part. ----------
+const drop = $('#drop');
+function clearFile(error) {
+  geo = file = redrawPart = null;
+  drop.dataset.state = 'idle';
+  $('#viewer').hidden = $('#geo').hidden = $('#viewer-help').hidden = true;
+  msg($('#file-msg'), error || '', true);
   render();
 }
-
 async function load(f) {
   msg($('#file-msg'), '');
-  if (!/\.stl$/i.test(f.name)) return fileError(`"${f.name}" isn't an .stl file. Export your model as STL and try again.`);
-  if (f.size > MAX_BYTES) return fileError('That file is over 50 MB. Email it to info@thetalab3d.shop instead.');
+  if (!/\.stl$/i.test(f.name)) return clearFile(`"${f.name}" isn't an STL file. Export your model as STL and try again, or email it to us.`);
+  if (f.size > MAX_BYTES) return clearFile('That file is over 50 MB. Email it to info@thetalab3d.shop instead.');
+  drop.dataset.state = 'loading';
+  await new Promise(r => setTimeout(r, 40));  // let "Measuring…" paint before the parse blocks the page
   try {
     const verts = parseSTL(await f.arrayBuffer());
     geo = measure(verts);
-    if (!(geo.volume > 0)) throw new Error('This STL has no volume. Is the mesh closed?');
+    if (!(geo.volume > 0)) throw new Error("We couldn't measure this file: the model has no volume. Check that the mesh is closed, or email it to us.");
     file = f;
-    $('#drop').classList.add('has-file');
-    $('#drop strong').textContent = f.name;
-    $('#drop .small').textContent = 'Choose or drop another file to replace it';
-    $('#nostl').hidden = true;
-    const big = geo.size.some(d => d > BED_MM);
-    $('#geo').hidden = false;
+    drop.dataset.state = 'ready';
+    $('#file-name').textContent = f.name;
+    $('#file-size').textContent = f.size > 1e6 ? `${(f.size / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(f.size / 1000))} KB`;
+    const big = geo.size.some(d => d > BED_MM), [x, y, z] = geo.size.map(d => d.toFixed(1));
+    $('#geo').hidden = $('#viewer-help').hidden = false;
     $('#geo').innerHTML = `
-      <div><dt>File</dt><dd>${esc(f.name)}</dd></div>
-      <div><dt>Size (X × Y × Z)</dt><dd>${geo.size.map(d => d.toFixed(1)).join(' × ')} mm</dd></div>
+      <div><dt>Width</dt><dd>${x} mm</dd></div><div><dt>Depth</dt><dd>${y} mm</dd></div><div><dt>Height</dt><dd>${z} mm</dd></div>
       <div><dt>Volume</dt><dd>${(geo.volume / 1000).toFixed(2)} cm³</dd></div>
-      <div><dt>Surface area</dt><dd>${(geo.area / 100).toFixed(1)} cm²</dd></div>
-      <div><dt>Triangles</dt><dd>${geo.triangles.toLocaleString()}</dd></div>
-      ${big ? `<div><dt>Note</dt><dd>Larger than a ${BED_MM} mm bed. We'll confirm if it can be split.</dd></div>` : ''}`;
-    viewer($('#viewer'), verts, geo);
+      ${big ? `<div class="dims-note"><dt>Note</dt><dd>Larger than our ${BED_MM} mm print area. We'll confirm whether it can be split.</dd></div>` : ''}`;
+    try { viewer($('#viewer'), verts, geo); } catch { $('#viewer').hidden = $('#viewer-help').hidden = true; }  // measurements still show
     render();
   } catch (e) {
-    fileError(e.message);
+    clearFile(e.message === 'Not a valid STL file' ? "We couldn't read that file. It may be damaged or not really an STL. Try exporting it again, or email it to us." : e.message);
   }
 }
-
-$('#file').addEventListener('change', e => e.target.files[0] && load(e.target.files[0]));
-const drop = $('#drop');
+$('#file').addEventListener('change', e => { const f = e.target.files[0]; e.target.value = ''; f && load(f); });
+$('#remove').addEventListener('click', () => { clearFile(); $('#file').focus(); });
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
 drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); e.dataTransfer.files[0] && load(e.dataTransfer.files[0]); });
 
-// Flat-shaded painter's-algorithm preview on a 2D canvas. Drag to rotate.
+// Flat-shaded painter's-algorithm preview on a 2D canvas, in the first chosen color. Drag or arrow keys to turn.
 function viewer(canvas, v, g) {
   canvas.hidden = false;
   const ctx = canvas.getContext('2d');
@@ -265,6 +395,9 @@ function viewer(canvas, v, g) {
   function draw() {
     const dpr = devicePixelRatio || 1, w = canvas.width = canvas.clientWidth * dpr, h = canvas.height = canvas.clientHeight * dpr;
     const s = Math.min(w, h) * 0.45 / radius, cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const hex = parseInt((COLORS[chosenColors()[0]] || '#c8ff00').slice(1), 16);
+    const lift = (hex >> 16) + (hex >> 8 & 255) + (hex & 255) < 150 ? 60 : 0;  // keeps Black readable
+    const R = (hex >> 16) + lift, G = (hex >> 8 & 255) + lift, B = (hex & 255) + lift;
     for (let t = 0; t < n; t++) {
       const i = t * step * 9;
       let d = 0;
@@ -284,15 +417,15 @@ function viewer(canvas, v, g) {
       const ux = P[o + 3] - P[o], uy = P[o + 4] - P[o + 1], uz = P[o + 5] - P[o + 2];
       const wx = P[o + 6] - P[o], wy = P[o + 7] - P[o + 1], wz = P[o + 8] - P[o + 2];
       const nx = uy * wz - uz * wy, ny = uz * wx - ux * wz, nz = ux * wy - uy * wx;
-      const k = 0.25 + 0.75 * Math.abs(nz) / (Math.hypot(nx, ny, nz) || 1);
-      ctx.fillStyle = ctx.strokeStyle = `rgb(${200 * k | 0},${255 * k | 0},${40 * k | 0})`;
+      const k = 0.35 + 0.65 * Math.abs(nz) / (Math.hypot(nx, ny, nz) || 1);
+      ctx.fillStyle = ctx.strokeStyle = `rgb(${R * k | 0},${G * k | 0},${B * k | 0})`;
       ctx.beginPath(); ctx.moveTo(P[o], P[o + 1]); ctx.lineTo(P[o + 3], P[o + 4]); ctx.lineTo(P[o + 6], P[o + 7]);
       ctx.closePath(); ctx.fill(); ctx.stroke();
     }
   }
   let last = null;
   canvas.onpointerdown = e => { last = [e.clientX, e.clientY]; canvas.setPointerCapture(e.pointerId); };
-  canvas.onpointerup = () => last = null;
+  canvas.onpointerup = canvas.onpointercancel = () => last = null;
   canvas.onpointermove = e => {
     if (!last) return;
     yaw += (e.clientX - last[0]) * 0.01;
@@ -300,11 +433,27 @@ function viewer(canvas, v, g) {
     last = [e.clientX, e.clientY];
     requestAnimationFrame(draw);
   };
+  canvas.onkeydown = e => {
+    const d = { ArrowLeft: [-0.15, 0], ArrowRight: [0.15, 0], ArrowUp: [0, -0.15], ArrowDown: [0, 0.15] }[e.key];
+    if (!d) return;
+    e.preventDefault();
+    yaw += d[0]; pitch = Math.max(-1.5, Math.min(1.5, pitch + d[1]));
+    draw();
+  };
+  redrawPart = draw;
   draw();
 }
 
+// ---------- sending the request ----------
 // Until online ordering is live, the button opens an email with the estimate filled in.
 // Copy is the fallback for people whose browser has no email app set up.
+$('#next-list').innerHTML = configured ? `
+  <li><strong>Place order request</strong> uploads your file and sends us these details. You'll need to be logged in.</li>
+  <li>We check your file and email you the final price and a ready date.</li>
+  <li>Nothing prints until you approve. You pay on pickup or by invoice.</li>` : `
+  <li><strong>Email this estimate</strong> opens your email app with these details filled in. Nothing is sent until you press send there.</li>
+  <li><strong>Attach your STL file</strong> to that email yourself. It can't be attached for you.</li>
+  <li>We reply with the final price and a ready date. Nothing prints until you approve, and you pay on pickup or by invoice.</li>`;
 if (!configured) {
   $('#place').textContent = 'Email this estimate';
   $('#copy').hidden = false;
@@ -318,27 +467,27 @@ $('#copy').addEventListener('click', async () => {
   }
 });
 function estimateText() {
-  const o = opts(), s = settings[o.region], m = material();
-  const grams = estimateWeight(geo, o.infill, m.density);
-  const [lo, hi] = priceRange(grams, o.quantity, o.colors, o.rush, s, m.price_factor);
+  const c = calc(), o = c.o;
   return [
     `File: ${file.name} (I'll attach it to this email)`,
     `Size: ${geo.size.map(d => d.toFixed(1)).join(' x ')} mm`,
-    `Material: ${m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Strength: ${form.infill.selectedOptions[0].text} (${o.infill}% infill)`,
+    `Material: ${c.m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Strength: ${strengthLabel()} (${o.infill}% infill)`,
     `Quantity: ${o.quantity}`, `Rush: ${o.rush ? 'yes' : 'no'}`,
-    `Estimated weight: ${grams} g per part`, `Website estimate: ${range(lo, hi, s.currency)}`,
-    `${form.fulfillment.value === 'delivery' ? 'Delivery' : 'Pickup'}: ${`${form.city.value} ${form.zip.value}`.trim() || 'Tempe'}`,
+    `Estimated weight: ${c.grams} g per part`, `Website estimate: ${range(c.lo, c.hi, c.s.currency)}`,
+    `${c.delivery ? 'Delivery' : 'Pickup'}: ${c.place}`,
     form.notes.value && `Notes: ${form.notes.value}`,
   ].filter(Boolean).join('\n');
 }
 function emailEstimate() {
   const body = estimateText();
   location.href = 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
-  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file. Nothing opened? Use Copy estimate and paste it into an email.');
+  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file, then send it: your request reaches us only once you do. Nothing opened? Use Copy estimate and paste it into an email.');
 }
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
+  if (!geo) return;
+  if (!form.city.value.trim()) { msg($('#msg'), 'Please add your city in step 3 so we know where the part is going.', true); form.city.focus(); return; }
   if (!configured) return emailEstimate();
   if (!user) {
     $('#msg').innerHTML = 'Please <a href="login.html?next=estimate.html">log in</a> or <a href="signup.html">create an account</a> to place an order. You\'ll need to choose the file again afterwards.';

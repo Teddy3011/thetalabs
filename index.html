@@ -36,40 +36,20 @@
 
 <link rel="preload" href="assets/fonts/space-grotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
 <script>
-// Runs before first paint: .js enables the enhanced UI, .motion enables animation (off for reduced motion),
-// .intro shows the first-visit intro. Add ?motion to the URL to force motion on a machine with reduced motion on.
+// Runs before first paint: .js enables the enhanced UI, .motion enables animation (off for reduced motion).
+// Add ?motion to the URL to force motion on a machine with reduced motion on.
 (() => {
   const d = document.documentElement;
   d.classList.add('js');
   try {
-    const force = new URLSearchParams(location.search).has('motion');
-    if (!force && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    d.classList.add('motion');
-    if (force || (!location.hash && !sessionStorage.getItem('introSeen'))) {
-      sessionStorage.setItem('introSeen', '1');
-      d.classList.add('intro', 'intro-played');
-    }
+    if (new URLSearchParams(location.search).has('motion') || !matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('motion');
   } catch (e) {}
 })();
 </script>
-<link rel="preload" as="image" href="assets/printer-frame.webp" type="image/webp">
 <script src="assets/script.js" defer></script>
-<script type="module">
-// Hero background: WebGL prism in the brand lime (assets/prism.js). Pauses off screen; still frame with reduced motion.
-import { mountPrism } from './assets/prism.js';
-// Wide screens only, centred on the printer column. Phones, data saver and low-memory devices keep the
-// CSS glow in styles.css (.hero-prism), which is also what shows without WebGL2.
-// ponytail: phones skipped because the 100-step raymarch costs ~0.5-1 s of blocking on throttled mobile in Lighthouse.
-const prismEl = document.getElementById('hero-prism');
-const lite = navigator.connection?.saveData || (navigator.deviceMemory ?? 8) < 4;
-if (!lite && matchMedia('(min-width: 900px)').matches) (window.requestIdleCallback || (f => setTimeout(f, 1200)))(() => {
-  mountPrism(prismEl, {
-    colors: ['#c8ff00', '#7a9c00', '#e9ffa3'], saturation: 1, glow: 0.8, scale: 3.4, timeScale: 0.35, resolution: 0.35,
-    offset: { x: prismEl.clientWidth * 0.22, y: 0 },
-  });
-}, { timeout: 2500 });
-</script>
+<script src="assets/home.js" defer></script>
 <script type="module">
 // Show the Login/Account menu item only once accounts are live (assets/config.js has real Supabase values).
 import { SUPABASE_URL } from './assets/config.js';
@@ -95,30 +75,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
 }
 </script>
 </head>
-<body>
-<!-- First-visit intro: the original printer sequence, ~3 s and time-based. Hidden unless the <head> script adds html.intro. -->
-<div class="intro-overlay" id="intro">
-  <button class="intro-skip" type="button">Skip intro</button>
-  <div class="intro-bg"></div>
-  <div class="intro-copy" aria-hidden="true">
-    <p class="intro-kicker">Theta Labs 3D</p>
-    <p class="intro-title">A Bright Start<br>To Every Idea</p>
-    <p class="intro-sub">Watch the A1 bring our mark to life</p>
-  </div>
-  <div class="intro-status" aria-hidden="true"><span class="intro-status-text">Printing · 0%</span><span class="p-bar"><span></span></span></div>
-  <div class="intro-printer" aria-hidden="true">
-    <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747">
-    <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143">
-    <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277">
-    <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
-    <div class="p-head">
-      <img src="assets/printer-toolhead.webp" alt="" width="120" height="268">
-      <span class="p-glow"></span>
-    </div>
-  </div>
-  <p class="intro-layer" aria-hidden="true">Layer 0/316</p>
-</div>
-
+<body class="home">
 <a class="skip-link" href="#main">Skip to content</a>
 
 <header class="site-header">
@@ -129,10 +86,10 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
     </a>
     <nav class="site-nav" id="site-nav" aria-label="Main">
       <ul>
-        <li><a href="#services">Services</a></li>
+        <li><a href="#make">What we make</a></li>
         <li><a href="#process">How it works</a></li>
         <li><a href="#pricing">Pricing</a></li>
-        <li><a href="#faq">FAQ</a></li>
+        <li><a href="#faq">Questions</a></li>
         <li><a href="estimate.html">Instant estimate</a></li>
         <li><a href="printers.html">For printer owners</a></li>
         <li hidden><a href="login.html" data-auth-link>Login</a></li>
@@ -154,220 +111,300 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
 </header>
 
 <main id="main">
-  <section class="hero" id="top" aria-labelledby="hero-title">
-    <div class="hero-prism" id="hero-prism" aria-hidden="true"></div>
-    <div class="wrap hero-inner">
-      <div class="hero-copy">
-        <p class="eyebrow">Founder-operated in Tempe, Arizona</p>
-        <h1 id="hero-title">Your parts.<br><span class="accent">Printed fast.</span></h1>
-        <p class="lead">Turn a design file or rough idea into a physical part with local, engineer-led 3D printing for prototypes, custom components, models, and multicolor builds.</p>
-        <div class="cta-row">
-          <a class="btn" href="estimate.html">Get an instant estimate <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
-          <a class="btn btn-ghost" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email your project</a>
+
+  <!-- 1 · HERO: the headline prints itself; the object on the right is a toy the visitor can print, turn and recolour. -->
+  <section class="hero2" id="top" aria-labelledby="hero-title">
+    <div class="wrap hero2-grid">
+      <div class="hero2-copy">
+        <p class="kicker">3D printing · made in Tempe, Arizona</p>
+        <h1 id="hero-title">Your parts.<br><span class="printed">Printed fast.</span></h1>
+        <p class="hero2-lead">Bring a 3D file, a sketch or just an idea. We turn it into a real object you can hold, and you pick it up nearby.</p>
+        <div class="paths">
+          <a class="path path-file" href="estimate.html">
+            <span class="path-kicker">I have a 3D file</span>
+            <span class="path-main">Get an instant estimate <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+          </a>
+          <a class="path path-idea" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">
+            <span class="path-kicker">I have an idea or sketch</span>
+            <span class="path-main">Email it to us <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></span>
+          </a>
         </div>
-        <ul class="chips" aria-label="Capabilities">
-          <li>PLA, PETG &amp; TPU</li>
-          <li>Most parts ready in 2–4 days</li><!-- OWNER-INPUT: confirm typical turnaround -->
-          <li>Up to 4 colors</li>
-          <li>Local pickup or delivery</li>
+      </div>
+
+      <form class="maker" id="maker" aria-label="Demo: print an object layer by layer" onsubmit="return false">
+        <canvas class="maker-canvas" role="img" aria-label="A demo object built up from printed layers. Drag to turn it."></canvas>
+        <p class="maker-readout" aria-hidden="true">LAYER 60/60 · Z 150 MM · DONE</p>
+        <label class="maker-slider"><span>Idea</span>
+          <input type="range" min="0" max="100" value="100" aria-label="Print progress">
+          <span>Object</span></label>
+        <div class="maker-row">
+          <fieldset class="picks"><legend class="sr-only">Shape</legend>
+            <label><input type="radio" name="shape" value="vase" checked><span>Vase</span></label>
+            <label><input type="radio" name="shape" value="bracket"><span>Bracket</span></label>
+            <label><input type="radio" name="shape" value="gear"><span>Gear</span></label>
+            <label><input type="radio" name="shape" value="theta"><span>θ tag</span></label>
+          </fieldset>
+          <fieldset class="picks dots"><legend class="sr-only">Filament color</legend>
+            <label title="Lime"><input type="radio" name="filament" value="lime" checked><span style="--c:#c8ff00"><i class="sr-only">Lime</i></span></label>
+            <label title="Bone"><input type="radio" name="filament" value="bone"><span style="--c:#efeadd"><i class="sr-only">Bone</i></span></label>
+            <label title="Orange"><input type="radio" name="filament" value="orange"><span style="--c:#ff5a1f"><i class="sr-only">Orange</i></span></label>
+            <label title="Sky"><input type="radio" name="filament" value="sky"><span style="--c:#8ecbe0"><i class="sr-only">Sky</i></span></label>
+          </fieldset>
+        </div>
+        <p class="maker-note">A demo to play with: slide to print, drag to turn. The shapes and colors are examples.</p>
+      </form>
+    </div>
+  </section>
+
+  <!-- 2 · WHAT WE MAKE. Four colour slabs; the open one is wide. Without JS every slab is open.
+       OWNER-INPUT (assets needed): one real photo per category, landscape, at least 1600 px wide, of prints made on the
+       A1: a prototype, a practical part, a multicolor print, a display model. Add material, size and colors for each.
+       Until then the drawings below stand in, and the caption says so. -->
+  <section class="make" id="make" aria-labelledby="make-title">
+    <div class="wrap make-head">
+      <p class="kicker">What we make</p>
+      <h2 id="make-title">If you can describe it, we can probably print it.</h2>
+    </div>
+    <div class="slabs">
+      <article class="slab slab-lime" data-shape="bracket" data-colors="black" data-ink="light" data-angle="0.6">
+        <button class="slab-toggle" type="button" aria-expanded="true" aria-controls="slab-1"><span class="slab-num">01</span><span class="slab-title">Prototypes</span></button>
+        <canvas aria-hidden="true"></canvas>
+        <div class="slab-body" id="slab-1">
+          <p class="slab-line">Hold your design before you commit to it.</p>
+          <dl>
+            <div><dt>Good for</dt><dd>Fit checks, design reviews, class and capstone projects</dd></div>
+            <div><dt>Send us</dt><dd>An STL file, or a sketch with dimensions</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="slab slab-bone" data-shape="gear" data-colors="orange" data-ink="light" data-angle="0.3">
+        <button class="slab-toggle" type="button" aria-expanded="true" aria-controls="slab-2"><span class="slab-num">02</span><span class="slab-title">Practical parts</span></button>
+        <canvas aria-hidden="true"></canvas>
+        <div class="slab-body" id="slab-2">
+          <p class="slab-line">The clip, knob or bracket you can't buy anywhere.</p>
+          <dl>
+            <div><dt>Good for</dt><dd>Replacement pieces, mounts, holders, one-off fixes</dd></div>
+            <div><dt>Send us</dt><dd>A file, or photos and measurements of the broken part</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="slab slab-orange" data-shape="theta" data-colors="black,bone" data-ink="light" data-angle="0.9">
+        <button class="slab-toggle" type="button" aria-expanded="true" aria-controls="slab-3"><span class="slab-num">03</span><span class="slab-title">Multicolor prints</span></button>
+        <canvas aria-hidden="true"></canvas>
+        <div class="slab-body" id="slab-3">
+          <p class="slab-line">Up to four colors in a single print.</p>
+          <dl>
+            <div><dt>Good for</dt><dd>Signs, labels, logos, presentation pieces</dd></div>
+            <div><dt>Send us</dt><dd>Your file, plus a note saying which color goes where</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="slab slab-sky" data-shape="tower" data-colors="bone" data-ink="light" data-angle="0.75">
+        <button class="slab-toggle" type="button" aria-expanded="true" aria-controls="slab-4"><span class="slab-num">04</span><span class="slab-title">Display models</span></button>
+        <canvas aria-hidden="true"></canvas>
+        <div class="slab-body" id="slab-4">
+          <p class="slab-line">Made to be looked at up close.</p>
+          <dl>
+            <div><dt>Good for</dt><dd>Architecture, classroom, pitch and presentation models</dd></div>
+            <div><dt>Send us</dt><dd>Your model file and the size you want it</dd></div>
+          </dl>
+        </div>
+      </article>
+    </div>
+    <p class="wrap make-note">These are drawings of the kinds of jobs we take, not photos of customer work.</p>
+  </section>
+
+  <!-- 3 · PROCESS: one bracket goes from idea to drawing to printed part as the steps are chosen. -->
+  <section class="process" id="process" aria-labelledby="process-title">
+    <div class="wrap process-grid" id="steps">
+      <div class="stage">
+        <canvas role="img" aria-label="A bracket shown first as an outline, then with measurements, then as a printed part."></canvas>
+        <p class="stage-caption" aria-live="polite">Printed: ready for pickup or delivery</p>
+      </div>
+      <div>
+        <p class="kicker">How it works</p>
+        <h2 id="process-title">Idea to object in three steps.</h2>
+        <ol class="how-steps">
+          <li><button class="step" type="button" aria-pressed="false">
+            <span class="step-n">1</span>
+            <span><strong>Share it.</strong> Upload a file for an instant estimate, or email a sketch, a photo or a description of what you need.</span>
+          </button></li>
+          <li><button class="step" type="button" aria-pressed="false">
+            <span class="step-n">2</span>
+            <span><strong>Review it.</strong> We check that it will print well, then send you the final price and a ready date. Nothing prints until you say yes.</span>
+          </button></li>
+          <li><button class="step" type="button" aria-pressed="true">
+            <span class="step-n">3</span>
+            <span><strong>Get it.</strong> We print and check your part, then arrange pickup or local delivery with you.</span>
+          </button></li>
+        </ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · THE PRACTICAL BITS: who it's for on the left, a spool-label service sheet on the right. -->
+  <section class="facts" id="service" aria-labelledby="facts-title">
+    <div class="wrap facts-grid">
+      <div>
+        <p class="kicker">Who it's for</p>
+        <h2 id="facts-title" class="sr-only">Who it's for and what to expect</h2>
+        <ul class="who">
+          <li><strong>Students and makers</strong> with a project that has a deadline.</li>
+          <li><strong>Anyone with an idea or a broken part</strong> and no 3D file.</li>
+          <li><strong>Engineers, designers and small businesses</strong> who need a prototype or a custom part.</li>
         </ul>
+        <!-- OWNER-INPUT: confirm whether you offer design/modelling help when a customer has no file, and how it is priced. -->
+        <p class="who-note">No file yet? Send a sketch, a photo or measurements. We'll tell you what it takes to get it printed.</p>
       </div>
+      <div class="label-card" role="group" aria-label="Service details">
+        <p class="label-head"><span>Theta Labs 3D</span><span>Service sheet</span></p>
+        <dl>
+          <div><dt>Material</dt><dd>PLA <small>The standard, sturdy plastic most prints use. PETG (tougher) and TPU (flexible) are also available.</small></dd></div>
+          <div><dt>Colors</dt><dd>Up to 4 <small>in one print</small></dd></div>
+          <!-- OWNER-INPUT: confirm typical turnaround -->
+          <div><dt>Timing</dt><dd>2–4 days <small>for most small parts. Rush in 24 hours costs 25% more, and we confirm first that we can make it.</small></dd></div>
+          <!-- OWNER-INPUT: confirm pickup area -->
+          <div><dt>Pickup</dt><dd>Near ASU <small>Tempe campus, by appointment. Local delivery around Tempe can be arranged.</small></dd></div>
+          <div><dt>From</dt><dd>$1–2 per gram <small>of PLA. $15 minimum order.</small></dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
 
-      <!-- Decorative printer. Without JS or with reduced motion it is static and complete; the CSS print,
-           idle toolhead sweep (on hover), callouts and pointer parallax are all enhancements. -->
-      <figure class="printer" aria-hidden="true">
-        <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747" fetchpriority="high">
-        <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143">
-        <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277">
-        <span class="p-bedline"></span>
-        <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
-        <div class="p-head">
-          <div class="p-carriage">
-            <img src="assets/printer-toolhead.webp" alt="" width="120" height="268">
-            <span class="p-glow"></span>
+  <!-- 5 · PRICING: what the instant estimate is, and what happens between it and paying. -->
+  <section class="pricing" id="pricing" aria-labelledby="pricing-title">
+    <div class="wrap">
+      <p class="kicker">Pricing</p>
+      <h2 id="pricing-title">An estimate in seconds.<br>A real quote from a person.</h2>
+      <div class="pricing-grid">
+        <ol class="flow">
+          <li><strong>Instant estimate</strong><span>Drop an STL file into the estimate tool. Your browser measures it and shows a price straight away, with no card needed.</span></li>
+          <li><strong>We look at your file</strong><span>A person checks that it will print well and whether it needs supports or changes.</span></li>
+          <li><strong>Final quote by email</strong><span>You get the confirmed price and a ready date.</span></li>
+          <li><strong>You approve</strong><span>Nothing is printed before you say yes.</span></li>
+          <li><strong>Pay on pickup or by invoice</strong><span>There is no online payment step.</span></li>
+        </ol>
+        <div>
+          <!-- Shown by script.js. Without JS both markets are listed side by side. -->
+          <div class="market-switch" role="group" aria-label="Pricing market" hidden>
+            <button type="button" data-market="us" aria-pressed="true">United States</button>
+            <button type="button" data-market="in" aria-pressed="false">India</button>
           </div>
+          <div class="price-grid">
+            <article class="price-card" data-market="us" aria-labelledby="price-us">
+              <h3 id="price-us"><span class="flag" aria-hidden="true">US</span> United States <span class="currency">USD</span></h3>
+              <p class="price-main">$1–2 <span>per gram, PLA</span></p>
+              <dl>
+                <div><dt>Minimum order</dt><dd>$15</dd></div>
+                <div><dt>Multicolor upgrade</dt><dd>+$5</dd></div>
+                <div><dt>PETG / TPU</dt><dd>+20% / +50%</dd></div>
+                <div><dt>Rush, ready in 24 hours</dt><dd>+25%, confirmed first</dd></div>
+              </dl>
+            </article>
+            <article class="price-card" data-market="in" aria-labelledby="price-in">
+              <h3 id="price-in"><span class="flag" aria-hidden="true">IN</span> India <span class="currency">INR</span></h3>
+              <p class="price-main">₹6–8 <span>per gram, PLA</span></p>
+              <dl>
+                <div><dt>Minimum order</dt><dd>₹300</dd></div>
+                <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
+                <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
+              </dl>
+            </article>
+          </div>
+          <a class="btn press press-dark" href="estimate.html">Get an instant estimate <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
         </div>
-        <span class="p-anno p-anno-xy">X 128.00 · Y 064.00</span>
-        <span class="p-anno p-anno-z">Z 18.40</span>
-        <span class="p-anno p-anno-layer">L 316/316</span>
-        <span class="p-callout p-callout-color">4-color capability</span>
-        <span class="p-callout p-callout-pla">PLA · PETG · TPU</span>
-        <span class="p-callout p-callout-local">Local fulfillment</span>
-        <figcaption class="p-status"><span class="p-bar"><span></span></span><span class="p-status-text">System ready</span></figcaption>
-      </figure>
-    </div>
-  </section>
-
-  <section class="section" id="services" aria-labelledby="services-title">
-    <div class="wrap">
-      <p class="eyebrow">01 / Services</p>
-      <h2 id="services-title">Built for the part you need next.</h2>
-      <ul class="cards">
-        <li class="card">
-          <span class="card-num" aria-hidden="true">01</span>
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M16 3 28 9.5v13L16 29 4 22.5v-13zM4 9.5 16 16l12-6.5M16 16v13"/></svg>
-          <h3>Rapid Prototypes</h3>
-          <p>Physical models for fit checks, design reviews, and engineering projects.</p>
-        </li>
-        <li class="card">
-          <span class="card-num" aria-hidden="true">02</span>
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M5 5h8v14h14v8H5z"/><circle cx="9" cy="9" r="1.6"/><circle cx="23" cy="23" r="1.6"/></svg>
-          <h3>Custom Parts</h3>
-          <p>One-off components and practical parts built around your dimensions and use case.</p>
-        </li>
-        <li class="card">
-          <span class="card-num" aria-hidden="true">03</span>
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="4" y="4" width="14" height="14"/><rect x="9" y="9" width="14" height="14"/><rect x="14" y="14" width="14" height="14"/></svg>
-          <h3>Multicolor Prints</h3>
-          <p>Up to four colors in one print for labels, presentations, and visual impact.</p>
-        </li>
-        <li class="card">
-          <span class="card-num" aria-hidden="true">04</span>
-          <svg class="card-icon" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><path d="M3 28h26M7 28V12l7-5v21M14 28V10l11 4v14M18 17h3M18 21h3"/></svg>
-          <h3>Display Models</h3>
-          <p>Architecture, classroom, pitch, and presentation models made for close-up viewing.</p>
-        </li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="section" id="process" aria-labelledby="process-title">
-    <div class="wrap">
-      <p class="eyebrow">02 / Process</p>
-      <h2 id="process-title">Design to part in three steps.</h2>
-      <ol class="timeline">
-        <li>
-          <span class="step-num" aria-hidden="true">01</span>
-          <h3>Send the request</h3>
-          <ul>
-            <li>Email or upload the design file</li>
-            <li>Or describe the part</li>
-            <li>Include quantity, dimensions, color, and deadline</li>
-          </ul>
-        </li>
-        <li>
-          <span class="step-num" aria-hidden="true">02</span>
-          <h3>Review the quote</h3>
-          <ul>
-            <li>Confirm printability</li>
-            <li>Receive price and timing</li>
-            <li>Confirm pickup or local delivery</li>
-          </ul>
-        </li>
-        <li>
-          <span class="step-num" aria-hidden="true">03</span>
-          <h3>Print and receive</h3>
-          <ul>
-            <li>Your part is printed</li>
-            <li>It's visually checked</li>
-            <li>Pickup or delivery is arranged</li>
-          </ul>
-        </li>
-      </ol>
-    </div>
-  </section>
-
-  <section class="section" id="pricing" aria-labelledby="pricing-title">
-    <div class="wrap">
-      <p class="eyebrow">03 / Pricing</p>
-      <h2 id="pricing-title">Clear starting prices.</h2>
-      <!-- Shown by script.js. Without JS both markets are listed side by side. -->
-      <div class="market-switch" role="group" aria-label="Pricing market" hidden>
-        <button type="button" data-market="us" aria-pressed="true">United States</button>
-        <button type="button" data-market="in" aria-pressed="false">India</button>
       </div>
-      <div class="price-grid">
-        <article class="price-card" data-market="us" aria-labelledby="price-us">
-          <h3 id="price-us"><span class="flag" aria-hidden="true">US</span> United States <span class="currency">USD</span></h3>
-          <p class="price-main">$1–2 <span>per gram, PLA</span></p>
-          <dl>
-            <div><dt>Minimum order</dt><dd>$15</dd></div>
-            <div><dt>Multicolor upgrade</dt><dd>+$5</dd></div>
-            <div><dt>PETG / TPU</dt><dd>+20% / +50%</dd></div>
-            <div><dt>Rush, ready in 24 hours</dt><dd>+25%, confirmed first</dd></div>
-          </dl>
-        </article>
-        <article class="price-card" data-market="in" aria-labelledby="price-in">
-          <h3 id="price-in"><span class="flag" aria-hidden="true">IN</span> India <span class="currency">INR</span></h3>
-          <p class="price-main">₹6–8 <span>per gram, PLA</span></p>
-          <dl>
-            <div><dt>Minimum order</dt><dd>₹300</dd></div>
-            <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
-            <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
-          </dl>
-        </article>
-      </div>
-      <p class="price-note">Final pricing depends on geometry, material use, print time, supports, finishing, and quantity. You approve the final quote before printing begins.</p>
     </div>
   </section>
 
-  <section class="section" id="faq" aria-labelledby="faq-title">
-    <div class="wrap narrow">
-      <p class="eyebrow">04 / FAQ</p>
-      <h2 id="faq-title">Frequently asked questions</h2>
+  <section class="questions" id="faq" aria-labelledby="faq-title">
+    <div class="wrap questions-grid">
+      <div>
+        <p class="kicker">Questions</p>
+        <h2 id="faq-title">Things people ask first.</h2>
+      </div>
       <div class="faq">
         <details>
-          <summary>What should I include in a quote request?</summary>
-          <p>Your design file (STL or 3MF) or a sketch, photo or description, plus quantity, approximate dimensions, colors, your deadline, and whether you'd like pickup or delivery.</p>
+          <summary>What file types can I upload?</summary>
+          <p>The estimate tool reads STL files, up to 50 MB. Most CAD and 3D apps can export one. If your file is in another format, email it to us and we'll take a look.</p>
         </details>
         <details>
-          <summary>What material do you currently print?</summary>
-          <p>PLA for most parts, PETG when you need something tougher or heat resistant, and TPU for flexible, rubber-like parts. PETG costs about 20% more per gram than PLA, and TPU about 50% more. Need something else? Ask in your request.</p>
+          <summary>What if I only have a sketch or an idea?</summary>
+          <!-- OWNER-INPUT: confirm whether you offer design/modelling help, and how it is priced. -->
+          <p>Email a sketch, photo, measurements or a short description of what the part needs to do. We'll review it and tell you what's needed to get it printed.</p>
         </details>
         <details>
-          <summary>Can you print in multiple colors?</summary>
-          <p>Yes, up to four colors in a single print. The multicolor upgrade is +$5 in the US or +₹150 in India.</p>
+          <summary>What might change the final price?</summary>
+          <p>The estimate is worked out from your file's size and the options you pick. The final quote can differ if the part needs supports, extra finishing, a different material, or changes to print well. You always see the final price before anything is printed.</p>
         </details>
         <details>
-          <summary>How quickly can I receive a part?</summary>
+          <summary>Is delivery included?</summary>
+          <!-- OWNER-INPUT: confirm whether local delivery has a fee, and how much. -->
+          <p>The estimate covers printing. Pickup is near ASU's Tempe campus, by appointment. Local delivery around Tempe can be arranged, and we confirm the details with your final quote.</p>
+        </details>
+        <details>
+          <summary>When do I approve the quote, and when do I pay?</summary>
+          <p>We email the final price and ready date. Printing starts only after you approve it. You pay on pickup or by invoice.</p>
+        </details>
+        <details>
+          <summary>How do I tell you where each color goes?</summary>
+          <!-- OWNER-INPUT: confirm how color placement is agreed (notes only, a marked-up image, or a multi-part file). -->
+          <p>Pick up to four colors in the estimate tool, then use the Notes box to say which part gets which color. If anything is unclear we ask before printing. The multicolor upgrade is +$5 in the US or +₹150 in India.</p>
+        </details>
+        <details>
+          <summary>What does "Strength" mean in the estimate tool?</summary>
+          <p>It sets how solid the inside of your part is. Printed parts are usually not solid all the way through, which saves material and time. "Standard" suits most parts. Choose a stronger setting if the part will carry weight.</p>
+        </details>
+        <details>
+          <summary>How quickly can I get my part?</summary>
           <!-- OWNER-INPUT: confirm typical turnaround -->
           <p>Most small parts are ready in 2–4 days. Larger or multi-part orders take longer, and your quote includes a ready date. Need it within 24 hours? Rush costs 25% more, and we confirm before printing that we can make it.</p>
-        </details>
-        <details>
-          <summary>Where do I pick up my order?</summary>
-          <!-- OWNER-INPUT: confirm pickup area -->
-          <p>Pickup is near ASU's Tempe campus, by appointment. When your part is ready we email you the exact spot and agree a time. Local delivery around Tempe can also be arranged.</p>
         </details>
         <details>
           <summary>Do you ship orders?</summary>
           <!-- OWNER-INPUT: confirm whether shipping is offered, and where. -->
           <p>Orders are currently fulfilled locally in Tempe, by pickup or local delivery. If you need shipping, ask in your request and we'll let you know what's possible.</p>
         </details>
-        <details>
-          <summary>What if I don't have a finished CAD file?</summary>
-          <!-- OWNER-INPUT: confirm whether you offer design/modelling help, and how it is priced. -->
-          <p>Send a sketch, photo, measurements or a short description of what the part needs to do. We'll review it and tell you what's needed to get it printed.</p>
-        </details>
       </div>
     </div>
   </section>
 
-  <section class="section" id="built-local" aria-labelledby="built-title">
-    <div class="wrap">
-      <p class="eyebrow">05 / Built Local</p>
-      <h2 id="built-title">One printer today. A nearby network tomorrow.</h2>
-      <div class="split">
-        <article class="panel panel-today" aria-labelledby="today-title">
-          <p class="panel-tag"><span class="status-dot" aria-hidden="true"></span>Now</p>
-          <h3 id="today-title">Operating today</h3>
-          <ul>
-            <li>Founder-operated Bambu Lab A1</li>
-            <li>Direct quote review</li>
-            <li>Local Tempe fulfillment</li>
-            <li>PLA, PETG, TPU and multicolor jobs</li>
-            <li>Direct pickup or delivery coordination</li>
-          </ul>
-        </article>
-        <article class="panel panel-vision" aria-labelledby="vision-title">
-          <p class="panel-tag">Vision · not yet operating</p>
-          <h3 id="vision-title">Marketplace vision</h3>
-          <ul>
-            <li>Vetted nearby printer owners</li>
-            <li>Local capacity matching</li>
-            <li>Hyderabad expansion</li>
-            <li>Job-status tracking</li>
-            <li>Distributed on-demand fulfillment</li>
-          </ul>
+  <!-- 6 · LOCAL. OWNER-INPUT (assets needed): the founder's public name, a photo (portrait or at the printer) and two or
+       three sentences in their own words. The section is written to work without them. -->
+  <section class="local" id="local" aria-labelledby="local-title">
+    <div class="wrap local-grid">
+      <div class="printer-panel">
+      <figure class="printer" aria-hidden="true">
+        <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747" loading="lazy">
+        <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143" loading="lazy">
+        <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277" loading="lazy">
+        <span class="p-bedline"></span>
+        <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+        <div class="p-head"><div class="p-carriage"><img src="assets/printer-toolhead.webp" alt="" width="120" height="268" loading="lazy"><span class="p-glow"></span></div></div>
+      </figure>
+      </div>
+      <div>
+        <p class="kicker">Made in Tempe</p>
+        <h2 id="local-title">The person who answers your email runs the printer.</h2>
+        <p>Theta Labs 3D is founder-operated. One person reviews your file, quotes it, prints it on a Bambu Lab A1 and hands it over. If something about your part won't print well, you hear it from the person who would be printing it.</p>
+        <ul class="local-list">
+          <li><strong>Pickup</strong> near ASU's Tempe campus, by appointment.</li>
+          <li><strong>Local delivery</strong> around Tempe, arranged with you.</li>
+          <li><strong>Questions</strong> go to <a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a>.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · FUTURE NETWORK: deliberately small. Tempe is real today; Hyderabad is a plan. -->
+  <section class="next" id="network" aria-labelledby="next-title">
+    <div class="wrap next-grid">
+      <div>
+        <p class="kicker">Planned</p>
+        <h2 id="next-title">Next: a printer near you, wherever you are.</h2>
+        <p>Today there is one printer, in Tempe. The plan is a network of vetted printer owners who take local jobs, starting in Hyderabad, India. It isn't running yet.</p>
+        <p><a class="next-link" href="printers.html">Own a printer? Tell us you're interested <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a></p>
+      </div>
           <figure class="network">
             <svg viewBox="0 0 320 156" aria-hidden="true" focusable="false">
               <defs><pattern id="net-grid" width="16" height="16" patternUnits="userSpaceOnUse"><path class="network-grid" d="M16 0H0V16"/></pattern></defs>
@@ -386,32 +423,21 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
               <text class="network-city" x="264" y="120" text-anchor="middle">Hyderabad, IN</text>
               <text class="network-meta" x="264" y="134" text-anchor="middle">17.39°N 78.49°E</text>
             </svg>
-            <figcaption>Network vision · illustrative only, not live data</figcaption>
+            <figcaption>A plan, not a live map.</figcaption>
           </figure>
-        </article>
-      </div>
     </div>
   </section>
 
-  <section class="section contact" id="contact" aria-labelledby="contact-title">
-    <div class="wrap narrow">
-      <p class="eyebrow">06 / Start a Project</p>
-      <h2 id="contact-title">Have a part in mind?</h2>
-      <p class="section-lead">Send the file, a sketch, or a short description. A few details are enough to start.</p>
-      <div class="contact-box">
-        <p class="contact-email"><a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">info@thetalab3d.shop</a></p>
-        <p>Helpful to include:</p>
-        <ul class="checklist">
-          <li>Your design file (STL or 3MF), or a sketch with dimensions</li>
-          <li>Quantity and colors</li>
-          <li>Your deadline</li>
-          <li>Pickup or delivery</li>
-        </ul>
-        <div class="cta-row">
-          <a class="btn" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">Email project details <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
-          <a class="btn btn-ghost" href="estimate.html">Get an instant estimate</a>
-        </div>
+  <!-- 8 · LAST WORD -->
+  <section class="last" id="contact" aria-labelledby="last-title">
+    <div class="wrap">
+      <h2 id="last-title">Have an idea?<br>Let's make it real.</h2>
+      <p>Start with whatever you have: a file, a sketch, a photo or a few sentences.</p>
+      <div class="cta-row">
+        <a class="btn press press-dark" href="estimate.html">I have a 3D file <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
+        <a class="btn press press-dark" href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">I have an idea or sketch <svg class="arrow" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M4 12 12 4M6 4h6v6"/></svg></a>
       </div>
+      <p class="last-mail">or write to <a href="mailto:info@thetalab3d.shop?subject=3D%20Print%20Quote%20Request">info@thetalab3d.shop</a></p>
     </div>
   </section>
 </main>
@@ -433,7 +459,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
     <nav aria-label="Footer">
       <h2 class="footer-title">Site</h2>
       <ul class="footer-list">
-        <li><a href="#services">Services</a></li>
+        <li><a href="#make">What we make</a></li>
         <li><a href="#process">How it works</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="privacy.html">Privacy</a></li>
