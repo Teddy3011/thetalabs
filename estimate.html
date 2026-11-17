@@ -159,6 +159,11 @@
             </div>
           </section>
         </form>
+
+        <div class="to-bill">
+          <button class="btn press" type="button" id="to-bill" disabled>Review your estimate →</button>
+          <p class="small" id="bill-msg" role="alert"></p>
+        </div>
       </div>
 
       <!-- right: the part and its live price stay in view while options change -->
@@ -180,14 +185,15 @@
   </div>
 
   <!-- the estimate comes out of a printer as a slip; the real action sits beside it and never depends on it -->
-  <section class="slip-band" id="review" aria-labelledby="s5">
+  <section class="slip-band" id="review" aria-labelledby="s5" hidden>
     <div class="wrap slip-grid">
+      <button class="btn btn-ghost btn-sm back-edit" type="button" id="back-edit">← Change options</button>
       <div class="slip-printer" id="printer">
         <div class="slip" id="slip"><p class="slip-text">Add a file and your estimate prints here.</p></div>
       </div>
       <div class="slip-next">
-        <p class="kicker">Review</p>
-        <h2 id="s5">Your estimate, on paper.</h2>
+        <p class="kicker">Step 4 · Review</p>
+        <h2 id="s5" tabindex="-1">Your estimate, on paper.</h2>
         <dl class="stats" id="price"></dl>
         <ol class="next-list" id="next-list"></ol>
         <div class="cta-row">
@@ -200,7 +206,7 @@
   </section>
 </main>
 
-<a class="quote-bar" id="quote-bar" href="#review" hidden><span id="quote-bar-price"></span><span>Review estimate ↓</span></a>
+<a class="quote-bar" id="quote-bar" href="#review" hidden><span id="quote-bar-price"></span><span>Review estimate →</span></a>
 
 <footer class="site-footer">
   <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
@@ -286,7 +292,8 @@ function render() {
   $('#rush-pct').textContent = +s.rush_pct;
   $('#region-note').hidden = o.region !== 'IN';
   $('#place').disabled = $('#copy').disabled = !geo;
-  $('#quote-bar').hidden = !geo;
+  $('#quote-bar').hidden = !geo || !$('#review').hidden;
+  $('#to-bill').disabled = !geo;
   $('#quote').classList.toggle('is-empty', !geo);
   if (!geo) {
     $('#price').innerHTML = $('#quote-meta').textContent = '';
@@ -329,6 +336,31 @@ function render() {
   ].filter(Boolean);
   if (printer) printer.update(slipHtml(lines), lines.length); else $('#slip').innerHTML = slipHtml(lines);
 }
+// ---------- two views: build the order, then review it like a bill. #review in the URL = the review view. ----------
+function applyView() {
+  const bill = location.hash === '#review' && !!geo && !!form.city.value.trim();
+  if (location.hash === '#review' && !bill) history.replaceState(null, '', location.pathname + location.search);
+  if (bill === !$('#review').hidden) return;
+  $('.est-head').hidden = $('.est-grid').hidden = bill;
+  $('#review').hidden = !bill;
+  render();
+  scrollTo(0, 0);
+  if (bill) { printer?.print(); $('#s5').focus({ preventScroll: true }); }
+  else if (geo) $('#to-bill').focus({ preventScroll: true });
+}
+function toBill(e) {
+  e?.preventDefault();
+  if (!geo) return;
+  if (!form.city.value.trim()) { msg($('#bill-msg'), 'Add your city in step 3 first, so we know where the part is going.', true); form.city.focus(); return; }
+  msg($('#bill-msg'), '');
+  location.hash = 'review';
+}
+$('#to-bill').addEventListener('click', toBill);
+$('#quote-bar').addEventListener('click', toBill);
+$('#back-edit').addEventListener('click', () => history.length > 1 && location.hash === '#review' ? history.back() : (location.hash = ''));
+addEventListener('hashchange', applyView);
+applyView();  // a stale #review in the URL (reload, shared link) starts back at the options
+
 form.addEventListener('input', e => {
   if (e.target.name === 'colors') colorPicks();
   if (/^color\d$/.test(e.target.name)) e.target.closest('fieldset').querySelector('b').textContent = e.target.value;
