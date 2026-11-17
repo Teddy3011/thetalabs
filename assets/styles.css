@@ -10,6 +10,12 @@
   src: url("fonts/space-grotesk-latin.woff2") format("woff2");
 }
 @font-face {
+  font-family: 'Fraunces';  /* display serif for big headlines; variable: wght, opsz, SOFT, WONK */
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/fraunces-latin.woff2") format("woff2");
+}
+@font-face {
   font-family: 'Space Mono';
   font-weight: 400;
   font-display: swap;
@@ -31,6 +37,7 @@
 
   --font-sans: 'Space Grotesk', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, Consolas, monospace;
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
 
   --step--1: 0.875rem;
   --step-0: 1rem;
@@ -84,6 +91,8 @@ body::before {
 
 img, svg { display: block; max-width: 100%; }
 h1, h2, h3 { line-height: 1.1; letter-spacing: -0.01em; text-wrap: balance; }
+/* big headlines and big prices are Fraunces: soft, slightly wonky, set a touch lighter than the sans */
+h1, h2, .price-main { font-family: var(--font-display); font-weight: 600; font-optical-sizing: auto; font-variation-settings: "SOFT" 50, "WONK" 1; }
 p, li, dd { text-wrap: pretty; }
 
 a { color: var(--accent); text-underline-offset: 0.2em; }
@@ -466,7 +475,7 @@ h3 { font-size: var(--step-1); margin-bottom: var(--space-1); }
 }
 .flag { color: var(--accent-ink); background: var(--accent); border-color: var(--accent); }
 .currency { color: var(--muted); margin-left: auto; }
-.price-main { font-size: var(--step-3); font-weight: 700; margin-block: var(--space-2); }
+.price-main { font-size: var(--step-3); margin-block: var(--space-2); }
 .price-main span { font-size: var(--step-0); font-weight: 400; color: var(--muted); }
 .price-card dl div {
   display: flex; justify-content: space-between; gap: var(--space-2);

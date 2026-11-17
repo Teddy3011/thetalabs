@@ -3,9 +3,9 @@
    and the estimate printed on a paper slip at the end. */
 .est { padding-top: clamp(1.5rem, 4vw, 3rem); }
 .est-head { margin-bottom: var(--space-4); }
-.est h1 { font-size: clamp(2.6rem, 1rem + 6vw, 5.5rem); line-height: 0.92; letter-spacing: -0.045em; font-weight: 700; margin-bottom: var(--space-2); }
+.est h1 { font-size: clamp(2.6rem, 1rem + 6vw, 5.5rem); line-height: 0.98; letter-spacing: -0.03em; margin-bottom: var(--space-2); }
 .est-lead { max-width: 40rem; font-size: var(--step-1); color: var(--muted); }
-.est h2 { font-size: var(--step-3); letter-spacing: -0.025em; line-height: 1.05; margin-bottom: var(--space-2); }
+.est h2 { font-size: var(--step-3); letter-spacing: -0.015em; line-height: 1.05; margin-bottom: var(--space-2); }
 .est-grid { display: grid; gap: var(--space-4); align-items: start; padding-bottom: var(--space-5); }
 @media (min-width: 900px) {
   .est-grid { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); gap: var(--space-5); }
@@ -106,7 +106,7 @@ html.motion .drop-bars { animation: bars 0.7s steps(5) infinite; }
 .dims-note dd { font-size: var(--step--1); font-weight: 400; }
 .price-ticket { margin-top: var(--space-2); padding: 1rem 1.25rem 1.1rem; border-radius: var(--radius); background: var(--accent); color: var(--ink); box-shadow: 0 var(--layer) 0 var(--lime-deep); }
 .price-ticket-label { font: 0.75rem var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; }
-.price-ticket-price { font-size: clamp(2.2rem, 1.4rem + 2.6vw, 3.4rem); font-weight: 700; line-height: 1.05; letter-spacing: -0.035em; }
+.price-ticket-price { font: 600 clamp(2.2rem, 1.4rem + 2.6vw, 3.4rem)/1.05 var(--font-display); letter-spacing: -0.02em; font-variation-settings: "SOFT" 50, "WONK" 1; }
 .price-ticket-meta { margin-top: 0.2rem; font: 0.8rem var(--font-mono); }
 .price-ticket-meta:empty { display: none; }
 .price-ticket-note { margin-top: 0.6rem; padding-top: 0.6rem; border-top: 1px solid rgb(9 10 9 / 0.35); font-size: var(--step--1); }
@@ -128,7 +128,7 @@ html.motion .drop-bars { animation: bars 0.7s steps(5) infinite; }
 
 /* the paper */
 .slip { padding: 0.5rem 1.1rem 1.25rem; color: #25251f; font: 0.8rem/1.5 var(--font-mono); }
-.slip-title { font: 700 1.25rem var(--font-sans); letter-spacing: -0.01em; text-align: center; }
+.slip-title { font: 600 1.35rem var(--font-display); font-variation-settings: "SOFT" 50, "WONK" 1; letter-spacing: -0.01em; text-align: center; }
 .slip-text { text-align: center; text-wrap: balance; }
 .slip-rule { margin: 0.6rem 0; border: 0; border-top: 1px dashed #25251f; }
 .slip-row { display: flex; justify-content: space-between; gap: 1rem; }

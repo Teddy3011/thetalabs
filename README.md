@@ -16,7 +16,7 @@ assets/home.css          "Ideas become objects" design language: shared tokens f
 assets/estimate.css      estimate page: job-ticket steps, option buttons, live price, estimate slip and its printer
 assets/receipt.js        estimate-slip printer (paper feed, tear-off). Decorates a slip that is already plain text on the page
 assets/home.js           homepage-only: draws the layer-by-layer objects on canvas (hero demo, gallery, process)
-assets/                  images (WebP), blueprint.svg, og-image.png, fonts/
+assets/                  images (WebP), blueprint.svg, og-image.png, fonts/ (Space Grotesk, Space Mono, Fraunces: all SIL OFL, licences beside them)
 *.png (root)             original artwork, kept as source files; the site loads the WebP versions in assets/
 ```
 

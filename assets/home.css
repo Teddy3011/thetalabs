@@ -12,7 +12,7 @@
   --lime-deep: #86a800;
   --layer: 5px;       /* how far a pressable thing sits above the page */
 }
-.home main h2 { font-size: clamp(2.1rem, 1.2rem + 4vw, 4.25rem); line-height: 0.98; letter-spacing: -0.035em; font-weight: 700; }
+.home main h2 { font-size: clamp(2.1rem, 1.2rem + 4vw, 4.25rem); line-height: 1; letter-spacing: -0.025em; }
 .home .arrow { display: inline-block; width: 0.9em; height: 0.9em; vertical-align: -0.05em; fill: none; stroke: currentColor; stroke-width: 2; }
 
 /* small mono label with a filament-width rule */
@@ -33,7 +33,7 @@
 .hero2 { padding-block: clamp(2rem, 6vw, 4.5rem) var(--space-5); }
 .hero2-grid { display: grid; gap: var(--space-4); align-items: center; }
 @media (min-width: 900px) { .hero2-grid { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); } .hero2 h1 { white-space: nowrap; } }
-.hero2 h1 { font-size: clamp(3.2rem, 0.8rem + 6.2vw, 6.75rem); line-height: 0.9; letter-spacing: -0.05em; font-weight: 700; margin-bottom: var(--space-3); }
+.hero2 h1 { font-size: clamp(3.2rem, 0.8rem + 6.2vw, 6.75rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: var(--space-3); }
 /* "Printed fast." is made of layer lines and prints itself from the bottom up */
 .printed { display: inline-block; padding-bottom: 0.08em; color: var(--accent); }
 @supports ((-webkit-background-clip: text) or (background-clip: text)) {
@@ -93,7 +93,7 @@ html.motion .printed { animation: print-up 1.4s 0.25s cubic-bezier(.3, 0, .2, 1)
 .slab-toggle {
   display: flex; align-items: baseline; gap: 0.75rem; width: 100%; min-height: 44px; padding: 0; border: 0; background: none;
   color: inherit; text-align: left; cursor: pointer;
-  font: 700 clamp(1.7rem, 1rem + 2.5vw, 2.6rem)/1 var(--font-sans); letter-spacing: -0.03em;
+  font: 600 clamp(1.7rem, 1rem + 2.5vw, 2.6rem)/1 var(--font-display); letter-spacing: -0.02em; font-variation-settings: "SOFT" 50, "WONK" 1;
 }
 .slab-toggle:focus-visible { outline: 3px solid var(--ink); outline-offset: 4px; }
 .slab-num { font: 400 0.8rem var(--font-mono); letter-spacing: 0.04em; }
@@ -204,7 +204,7 @@ html:not(.motion) .slab { transition: none !important; }
 
 /* ---------- 8 · last word ---------- */
 .last { padding-block: var(--space-5) calc(var(--space-5) * 1.2); background: var(--orange); color: var(--ink); }
-.home .last h2 { font-size: clamp(3rem, 1rem + 9vw, 8rem); line-height: 0.88; letter-spacing: -0.05em; margin-bottom: var(--space-3); }
+.home .last h2 { font-size: clamp(3rem, 1rem + 9vw, 8rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: var(--space-3); }
 .last p { font-size: var(--step-2); max-width: 30rem; }
 .last .cta-row { margin-top: var(--space-3); }
 .last-mail { margin-top: var(--space-3); font-size: var(--step-0) !important; }
