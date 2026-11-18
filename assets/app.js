@@ -1,5 +1,6 @@
 // Shared code for the app pages. Needs the supabase-js UMD script loaded before this module.
 import { SUPABASE_URL, SUPABASE_ANON_KEY } from './config.js';
+import { identity } from './avatar.js';
 
 export const configured = !SUPABASE_URL.includes('YOUR_') && !!window.supabase;
 export const sb = configured ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
@@ -32,6 +33,15 @@ export function requireConfig(el) {
   return false;
 }
 
+// Guests: anonymous Supabase accounts (supabase/003_guest_accounts.sql). Same orders and tracking, no email or password.
+export const isGuest = user => !!user?.is_anonymous;
+export async function startGuest() {
+  const { data, error } = await sb.auth.signInAnonymously();
+  if (error) throw error;
+  return data.user;
+}
+export { identity };
+
 export async function getUser() {
   if (!sb) return null;
   const { data } = await sb.auth.getSession();
@@ -54,7 +64,8 @@ export async function requireUser() {
 getUser().then(user => {
   for (const a of document.querySelectorAll('[data-auth-link]')) {
     a.parentElement.hidden = !configured;
-    a.textContent = user ? 'Account' : 'Login';
+    if (user) a.innerHTML = identity(user.id).svg(24, '') + `<span>${isGuest(user) ? identity(user.id).name : 'Account'}</span>`;
+    else a.textContent = 'Login';
     a.href = user ? 'account.html' : 'login.html';
   }
 });

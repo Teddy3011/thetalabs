@@ -45,19 +45,42 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, date, materialText, colorText, priceText, tag, requireConfig, requireUser, getProfile } from './assets/app.js';
+import { sb, $, esc, msg, date, materialText, colorText, priceText, tag, requireConfig, requireUser, getProfile, isGuest, identity } from './assets/app.js';
 
 if (requireConfig($('#gate'))) {
   const user = await requireUser();
   if (user) {
     const p = await getProfile(user);
-    $('#me').innerHTML = `<p class="section-lead">Signed in as ${esc(p?.email)}.
+    const guest = isGuest(user), me = identity(user.id);
+    $('#me').innerHTML = guest ? `
+      <div class="guest-card">
+        ${me.svg(72, '')}
+        <div>
+          <p class="small">Guest account</p>
+          <h2>${me.name}</h2>
+          <p class="small">No email or password. This account lives in this browser only: clearing your browser data or
+            logging out loses it, and we can't email you about your orders. Add an email to keep it.</p>
+          <form class="form guest-keep" id="keep">
+            <label>Email <input type="email" name="email" required maxlength="120" autocomplete="email"></label>
+            <button class="btn btn-sm" type="submit">Keep my account</button>
+          </form>
+          <p class="msg" id="keep-msg" role="status"></p>
+        </div>
+      </div>
+      <p class="section-lead"><a href="estimate.html">New order</a> · <a href="#" id="logout">Log out</a></p>` : `<p class="section-lead">Signed in as ${esc(p?.email)}.
       ${p?.role === 'printer' ? '<a href="printers.html">Go to the job board</a> · ' : ''}
       ${p?.role === 'admin' ? '<a href="admin.html">Admin</a> · <a href="printers.html">Job board</a> · ' : ''}
       <a href="estimate.html">New order</a> ·
       <a href="#" id="logout">Log out</a></p>`;
+    $('#keep')?.addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = e.target.email.value.trim();
+      const { error } = await sb.auth.updateUser({ email });
+      msg($('#keep-msg'), error ? error.message : `We sent a link to ${email}. Open it to confirm, and your orders stay with that email.`, !!error);
+    });
     $('#logout').addEventListener('click', async e => {
       e.preventDefault();
+      if (guest && !confirm("Log out of this guest account? You won't be able to get back into it or its orders.")) return;
       await sb.auth.signOut();
       location.href = './';
     });

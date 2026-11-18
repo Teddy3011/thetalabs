@@ -213,7 +213,7 @@
 </footer>
 
 <script type="module">
-import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
+import { sb, configured, $, esc, money, range, msg, getUser, getProfile, startGuest, identity } from './assets/app.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
@@ -481,7 +481,7 @@ function viewer(canvas, v, g) {
 // Until online ordering is live, the button opens an email with the estimate filled in.
 // Copy is the fallback for people whose browser has no email app set up.
 $('#next-list').innerHTML = configured ? `
-  <li><strong>Place order request</strong> uploads your file and sends us these details. You'll need to be logged in.</li>
+  <li><strong>Place order request</strong> uploads your file and sends us these details. Log in, or continue as a guest with no sign-up.</li>
   <li>We check your file and email you the final price and a ready date.</li>
   <li>Nothing prints until you approve. You pay on pickup or by invoice.</li>` : `
   <li><strong>Email this estimate</strong> opens your email app with these details filled in. Nothing is sent until you press send there.</li>
@@ -529,7 +529,15 @@ form.addEventListener('submit', async e => {
   if (!form.city.value.trim()) { msg($('#msg'), 'Please add your city in step 3 so we know where the part is going.', true); form.city.focus(); return; }
   if (!configured) return emailEstimate();
   if (!user) {
-    $('#msg').innerHTML = 'Please <a href="login.html?next=estimate.html">log in</a> or <a href="signup.html">create an account</a> to place an order. You\'ll need to choose the file again afterwards.';
+    $('#msg').innerHTML = `<p>No account needed: continue as a guest and track your order on this device.</p>
+      <div class="cta-row"><button class="btn btn-sm press" type="button" id="as-guest">Continue as guest</button></div>
+      <p class="small">Or <a href="login.html?next=estimate.html">log in</a> / <a href="signup.html">create an account</a> to get updates by email
+      (you'll need to choose the file again afterwards).</p>`;
+    $('#as-guest').onclick = async () => {
+      try { user = await startGuest(); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
+      msg($('#msg'), `You're ordering as ${identity(user.id).name}.`);
+      form.requestSubmit();
+    };
     return;
   }
   const o = opts(), btn = $('#place');

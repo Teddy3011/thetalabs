@@ -33,6 +33,8 @@ assets/config.js         Supabase project URL + anon key (public)
 assets/app.js            shared client code; assets/stl.js STL math + pricing (tested by `npm test`)
 supabase/schema.sql      tables, RLS, job functions, storage bucket — run once in the SQL editor
 supabase/002_*.sql       later changes (materials, colors) — run after schema.sql, in order
+supabase/003_*.sql       guest accounts: guests are always customers, at most 3 orders in progress, email sync
+assets/avatar.js         a guest's geometric avatar and name ("Orange Gear 42"), worked out from the account id
 ```
 
 Until `assets/config.js` has real values, those pages show a "Preview · not live yet" notice and the estimator still works.
@@ -49,7 +51,13 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
    add your own SMTP (e.g. Resend, Brevo, or your mail provider) under **SMTP Settings**.
 6. Sign up on the site with `info@thetalab3d.shop`, confirm the email, then in the SQL editor run
    `update public.profiles set role = 'admin' where email = 'info@thetalab3d.shop';`
-7. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
+7. **Guest checkout (optional):** run `supabase/003_guest_accounts.sql`, then turn on
+   **Authentication → Sign In / Providers → Allow anonymous sign-ins**. Customers can then press
+   "Continue as guest" when placing an order: no email or password, a random avatar and name, orders tracked in that
+   browser. Guests can add an email later on My orders to keep the account. Without this setting the button shows a
+   "not available" message and customers log in as before. If guests start creating lots of accounts, turn on
+   **Authentication → Bot and abuse protection (CAPTCHA)**.
+8. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
    accept it as the printer.
 
 Notes: the free plan caps uploads at 50 MB per file, so the bucket limit is 50 MB (60 MB needs the Pro plan; see the

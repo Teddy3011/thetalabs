@@ -44,7 +44,8 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, date, priceText, sizeText, statusText, tag, materialText, colorText, requireConfig, requireUser } from './assets/app.js';
+import { sb, $, esc, date, priceText, sizeText, statusText, tag, materialText, colorText, requireConfig, requireUser, isGuest } from './assets/app.js';
+let guest = false;
 
 const id = new URLSearchParams(location.search).get('id');
 const STEPS = ['open', 'printing', 'ready', 'completed'];  // accepted counts as still queued
@@ -65,11 +66,13 @@ function render(o) {
       <div><dt>${o.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}</dt><dd>${esc(o.city)} ${esc(o.zip || '')}</dd></div>
       <div class="total"><dt>Estimate</dt><dd>${priceText(o)}</dd></div>
     </dl>
+    ${guest ? '<p class="msg">You ordered as a guest, so we can\'t email you. Check this page for updates, or <a href="account.html">add an email</a> to get them by email.</p>' : ''}
     <p class="small">We confirm the final price by email. You pay on pickup or by invoice. When it's ready we email you the pickup spot near ASU's Tempe campus. This page updates live.</p>`;
 }
 
 if (requireConfig($('#gate'))) {
   const user = await requireUser();
+  guest = isGuest(user) && !user.email;
   if (user && !id) {
     $('#order').innerHTML = '<p class="msg">Pick an order from <a href="account.html">My orders</a>.</p>';
   } else if (user) {
