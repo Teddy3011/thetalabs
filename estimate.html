@@ -131,6 +131,7 @@
                     <label class="choice"><input type="radio" name="region" value="US" checked><span>United States</span></label>
                     <label class="choice"><input type="radio" name="region" value="IN"><span>India</span></label>
                   </div>
+                  <p class="small" id="region-how" hidden></p>
                   <p class="small" id="region-note" hidden>India is a developing market for us: orders there are by inquiry.</p>
                 </fieldset>
               </div>
@@ -216,6 +217,7 @@
 <script type="module">
 import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
 import * as cart from './assets/cart.js';
+import { detect as detectRegion, remember as rememberRegion } from './assets/region.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
@@ -223,8 +225,6 @@ const BED_MM = 256;                  // Bambu Lab A1
 const form = $('#opts');
 let settings = DEFAULT_SETTINGS, materials = DEFAULT_MATERIALS, file = null, geo = null, user = null, redrawPart = null;
 
-const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-if (tz === 'Asia/Kolkata' || tz === 'Asia/Calcutta') form.region.value = 'IN';
 
 if (configured) {
   const { data } = await sb.from('settings').select('*');
@@ -374,6 +374,17 @@ for (const b of form.querySelectorAll('.qty button')) b.addEventListener('click'
   render();
 });
 render();
+// Prices for the visitor's country (assets/region.js). Never overrides a choice made on this page.
+let regionTouched = false;
+detectRegion().then(({ region, how }) => {
+  if (regionTouched) return;
+  if (form.region.value !== region) { form.region.value = region; render(); }
+  if (how !== 'choice') {
+    $('#region-how').hidden = false;
+    $('#region-how').textContent = `Showing ${region === 'IN' ? 'India (₹)' : 'US ($)'} prices${how === 'ip' ? ' based on your location' : ''}. Change it if that's wrong.`;
+  }
+});
+form.addEventListener('change', e => { if (e.target.name === 'region') { regionTouched = true; rememberRegion(e.target.value); $('#region-how').hidden = true; } });
 
 // ---------- file: idle → loading → ready. Problems show under the box and clear the previous part. ----------
 const drop = $('#drop');

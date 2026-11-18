@@ -53,6 +53,17 @@
 <script src="assets/home.js" defer></script>
 <script type="module">import { count } from './assets/cart.js'; count();</script>
 <script type="module">
+// Price cards open on the visitor's country (assets/region.js); switching by hand is remembered.
+import { detect, remember } from './assets/region.js';
+const sw = document.querySelector('.market-switch');
+let touched = false, auto = false;
+sw?.addEventListener('click', e => { const b = e.target.closest('[data-market]'); if (b && !auto) { touched = true; remember(b.dataset.market.toUpperCase()); } });
+detect().then(({ region }) => {
+  if (touched || region !== 'IN') return;
+  auto = true; sw?.querySelector('[data-market="in"]')?.click(); auto = false;  // a detected country isn't saved as a choice
+});
+</script>
+<script type="module">
 // Show the Login/Account menu item only once accounts are live (assets/config.js has real Supabase values).
 import { SUPABASE_URL } from './assets/config.js';
 if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('[data-auth-link]')) a.parentElement.hidden = false;
