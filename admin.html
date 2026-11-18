@@ -95,12 +95,18 @@ if (requireConfig($('#gate'))) {
       if (error) return msg($('#msg'), error.message, true);
       orders = Object.fromEntries(data.map(o => [o.id, o]));
       $('#orders').innerHTML = !data.length ? '<p class="small">No orders yet.</p>' : `<div class="table"><table>
-        <thead><tr><th>Placed</th><th>Customer</th><th>File</th><th>Job</th><th>Estimate</th><th>Payout</th><th>Where</th><th>Printer</th><th>Status</th></tr></thead>
+        <thead><tr><th>Placed</th><th>Customer</th><th>File</th><th>Job</th><th>Estimate</th><th>Final price</th><th>Payment</th><th>Payout</th><th>Where</th><th>Printer</th><th>Status</th></tr></thead>
         <tbody>${data.map(o => `<tr>
           <td>${date(o.created_at)}</td><td>${esc(o.customer?.email)}</td>
           <td><button class="btn btn-sm btn-ghost" data-download="${o.id}">${esc(o.filename)}</button></td>
           <td>${o.quantity} × ${o.est_weight_g} g · ${sizeText(o)} · ${materialText(o)} · ${esc(colorText(o))} · ${o.infill}%${o.rush ? ' · rush' : ''}${o.notes ? `<br><span class="small">${esc(o.notes)}</span>` : ''}</td>
-          <td>${priceText(o)}</td><td>${money(o.payout, o.currency)}</td>
+          <td>${priceText(o)}</td>
+          <td>${['quote', 'priced'].includes(o.status)
+            ? `<form class="price-form" data-price="${o.id}"><input type="number" name="price" step="0.01" min="0.01" required
+                value="${o.final_price ?? o.price_high}" aria-label="Final price for ${esc(o.filename)}"><button class="btn btn-sm" type="submit">${o.status === 'quote' ? 'Set price' : 'Update'}</button></form>`
+            : o.final_price != null ? money(o.final_price, o.currency) : '—'}</td>
+          <td>${o.payment === 'card' ? `Card${o.paid_at ? `, paid ${date(o.paid_at)}` : ''}` : o.payment === 'pickup' ? 'On pickup' : '—'}</td>
+          <td>${money(o.payout, o.currency)}</td>
           <td>${esc(o.city)} ${esc(o.zip || '')} · ${o.fulfillment}</td><td>${esc(o.printer?.email || '—')}</td>
           <td><select data-order="${o.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) =>
             `<option value="${k}" ${k === o.status ? 'selected' : ''}>${v}</option>`).join('')}</select></td>
@@ -141,6 +147,15 @@ if (requireConfig($('#gate'))) {
       if (r.error?.message.includes('printer_matches_status'))
         msg($('#msg'), 'That status needs a printer. Accept the job on the job board first (you can accept it yourself).', true);
       else show(r);
+      loadOrders();
+    });
+
+    // Final price: one part at a time. When every part of a cart is priced, the customer can pay.
+    document.addEventListener('submit', async e => {
+      const id = e.target.dataset.price;
+      if (!id) return;
+      e.preventDefault();
+      show(await sb.rpc('set_final_price', { order_id: id, price: +e.target.price.value }));
       loadOrders();
     });
 

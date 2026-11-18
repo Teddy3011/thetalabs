@@ -1,0 +1,56 @@
+/* Cart and order (bill) pages. Loaded after styles.css and home.css; the order page also loads estimate.css for the
+   slip printer. Parts are paper job tickets, like the printer-owner page. */
+.shop { padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-5); }
+.shop h1 { font-size: clamp(2.6rem, 1rem + 6vw, 5.5rem); line-height: 0.98; letter-spacing: -0.03em; margin-bottom: var(--space-2); }
+.shop h2 { font-size: var(--step-3); letter-spacing: -0.015em; margin-bottom: var(--space-2); }
+.shop-lead { max-width: 40rem; margin-bottom: var(--space-3); font-size: var(--step-1); color: var(--muted); }
+.shop-lead:empty { display: none; }
+.shop .msg { margin-bottom: var(--space-2); }
+.cart-count { display: inline-grid; place-items: center; min-width: 1.4em; height: 1.4em; margin-left: 0.3rem; padding: 0 0.35em; border-radius: 999px; background: var(--accent); color: var(--accent-ink); font: 700 0.75rem var(--font-mono); }
+.cart-count[hidden] { display: none; }
+
+.shop-grid { display: grid; gap: var(--space-4); align-items: start; margin-top: var(--space-3); }
+@media (min-width: 900px) { .shop-grid { grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.9fr); gap: var(--space-5); } .checkout { position: sticky; top: calc(var(--header-h) + 2.75rem); } }
+
+/* a part in the cart */
+.tickets { display: grid; gap: var(--space-2); margin: 0 0 var(--space-2); padding: 0 0 var(--layer); list-style: none; }
+.ticket { display: grid; gap: 0.6rem; padding: 1.1rem 1.2rem 1.2rem; border-radius: 10px; background: var(--paper); color: var(--ink); box-shadow: 0 var(--layer) 0 #aba593; }
+.ticket-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 0.5rem 1rem; }
+.ticket-head strong { font-size: var(--step-1); overflow-wrap: anywhere; }
+.ticket-price { font: 600 var(--step-2)/1.1 var(--font-display); letter-spacing: -0.01em; font-variation-settings: "SOFT" 50, "WONK" 1; }
+.ticket dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr)); gap: 0 1.25rem; }
+.ticket dl div { display: flex; justify-content: space-between; gap: 1rem; padding-block: 0.35rem; border-top: 1px dashed rgb(0 0 0 / 0.3); font-size: var(--step--1); }
+.ticket dt { font: 0.75rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: #4a4d44; }
+.ticket dd { text-align: right; overflow-wrap: anywhere; }
+.ticket .btn-ghost { justify-self: start; color: var(--ink); border-color: var(--ink); }
+.ticket .btn-ghost:is(:hover, :focus-visible) { background: rgb(0 0 0 / 0.06); }
+.tickets-empty { padding: var(--space-3); border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }
+
+/* checkout box */
+.checkout { padding: var(--space-3); border: 1px solid var(--line); border-radius: 14px; background: var(--surface); }
+.checkout .stats { margin-bottom: 0.75rem; }
+.checkout .next-list { margin-block: var(--space-2); }
+.checkout .cta-row { margin-block: var(--space-2) 0; }
+.who-line { display: flex; align-items: center; gap: 0.6rem; }
+/* reuses the estimate page's numbered list */
+.next-list { display: grid; gap: 0.6rem; padding: 0; list-style: none; counter-reset: next; }
+.next-list li { counter-increment: next; position: relative; padding-left: 2.25rem; color: var(--muted); }
+.next-list li::before { content: counter(next, decimal-leading-zero); position: absolute; left: 0; top: 0.25rem; font: 0.8rem var(--font-mono); color: var(--accent); }
+.next-list strong { color: var(--fg); }
+
+/* order page */
+.bill-grid { display: grid; gap: var(--space-4); align-items: start; }
+@media (min-width: 900px) { .bill-grid { grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: var(--space-5); } .bill-grid[data-stage="checking"] { grid-template-columns: 1fr; } }
+#pay { margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 2px solid var(--line); }
+.part-list { display: grid; gap: var(--space-2); padding: 0; list-style: none; }
+.part { padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.part-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem; }
+.part-head strong { overflow-wrap: anywhere; }
+.part .small { margin-top: 0.3rem; }
+/* where the part is: four stops, filled up to the current one */
+.track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.4rem; margin-top: 0.75rem; padding: 0; list-style: none; }
+.track li { padding-top: 0.5rem; border-top: 4px solid var(--line); font: 0.75rem var(--font-mono); color: var(--muted); }
+.track li.done { border-color: var(--accent); color: var(--fg); }
+.track li.now { border-color: var(--accent); color: var(--accent); }
+html.motion .track li.now { animation: now 1.2s ease-in-out infinite; }
+@keyframes now { 50% { border-color: rgb(200 255 0 / 0.35); } }

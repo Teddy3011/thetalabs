@@ -38,6 +38,7 @@
         <li><a href="./">Home</a></li>
         <li><a href="estimate.html" aria-current="page">Estimate</a></li>
         <li><a href="printers.html">Printers</a></li>
+        <li><a href="cart.html">Cart <span class="cart-count" data-cart-count hidden></span></a></li>
         <li hidden><a href="login.html" data-auth-link>Login</a></li>
       </ul>
     </nav>
@@ -197,8 +198,8 @@
         <dl class="stats" id="price"></dl>
         <ol class="next-list" id="next-list"></ol>
         <div class="cta-row">
-          <button class="btn press" type="submit" form="opts" id="place" disabled>Place order request</button>
-          <button class="btn btn-ghost" type="button" id="copy" hidden disabled>Copy estimate</button>
+          <button class="btn press" type="submit" form="opts" id="place" disabled>Add to cart</button>
+          <a class="btn btn-ghost" href="cart.html" id="go-cart" hidden>View cart</a>
         </div>
         <p class="msg" id="msg" role="status"></p>
       </div>
@@ -213,7 +214,8 @@
 </footer>
 
 <script type="module">
-import { sb, configured, $, esc, money, range, msg, getUser, getProfile, startGuest, identity } from './assets/app.js';
+import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
+import * as cart from './assets/cart.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
@@ -291,7 +293,7 @@ function render() {
   const o = opts(), s = settings[o.region];
   $('#rush-pct').textContent = +s.rush_pct;
   $('#region-note').hidden = o.region !== 'IN';
-  $('#place').disabled = $('#copy').disabled = !geo;
+  $('#place').disabled = !geo;
   $('#quote-bar').hidden = !geo || !$('#review').hidden;
   $('#to-bill').disabled = !geo;
   $('#quote').classList.toggle('is-empty', !geo);
@@ -477,86 +479,45 @@ function viewer(canvas, v, g) {
   draw();
 }
 
-// ---------- sending the request ----------
-// Until online ordering is live, the button opens an email with the estimate filled in.
-// Copy is the fallback for people whose browser has no email app set up.
-$('#next-list').innerHTML = configured ? `
-  <li><strong>Place order request</strong> uploads your file and sends us these details. Log in, or continue as a guest with no sign-up.</li>
-  <li>We check your file and email you the final price and a ready date.</li>
-  <li>Nothing prints until you approve. You pay on pickup or by invoice.</li>` : `
-  <li><strong>Email this estimate</strong> opens your email app with these details filled in. Nothing is sent until you press send there.</li>
-  <li><strong>Attach your STL file</strong> to that email yourself. It can't be attached for you.</li>
-  <li>We reply with the final price and a ready date. Nothing prints until you approve, and you pay on pickup or by invoice.</li>`;
-if (!configured) {
-  $('#place').textContent = 'Email this estimate';
-  $('#copy').hidden = false;
-}
-$('#copy').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText('To: info@thetalab3d.shop\n\n' + estimateText());
-    msg($('#msg'), 'Copied. Paste it into an email to info@thetalab3d.shop and attach your STL file.');
-  } catch {
-    msg($('#msg'), 'Your browser blocked copying. Email info@thetalab3d.shop with your file and the options above.', true);
-  }
-});
-function estimateText(withoutNotes) {
-  const c = calc(), o = c.o;
-  return [
-    `File: ${file.name} (I'll attach it to this email)`,
-    `Size: ${geo.size.map(d => d.toFixed(1)).join(' x ')} mm`,
-    `Material: ${c.m.name}`, `Colors: ${o.color_choices.join(', ')}`, `Strength: ${strengthLabel()} (${o.infill}% infill)`,
-    `Quantity: ${o.quantity}`, `Rush: ${o.rush ? 'yes' : 'no'}`,
-    `Estimated weight: ${c.grams} g per part`, `Website estimate: ${range(c.lo, c.hi, c.s.currency)}`,
-    `${c.delivery ? 'Delivery' : 'Pickup'}: ${c.place}`,
-    form.notes.value && (withoutNotes ? 'Notes: (too long for this email; I will paste them below)' : `Notes: ${form.notes.value}`),
-  ].filter(Boolean).join('\n');
-}
-function emailEstimate() {
-  const link = body => 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent('3D print order: ' + file.name) + '&body=' + encodeURIComponent(body);
-  let url = link(estimateText()), cut = false;
-  // Some email apps (classic Outlook among them) ignore links over ~2,000 characters, so very long notes are
-  // left out of the email and the customer pastes them in from Copy estimate instead.
-  if (url.length > 1900) { url = link(estimateText(true)); cut = true; }
-  location.href = url;
-  msg($('#msg'), 'Your email app should open with the details filled in. Attach your STL file, then send it: your request reaches us only once you do.'
-    + (cut ? ' Your notes were too long to fit in the email link: press Copy estimate and paste them into the email.' : '')
-    + ' Nothing opened? Use Copy estimate and paste it into an email.');
-}
+// ---------- add to cart: the part, its file and these options stay in this browser until checkout (cart.html) ----------
+$('#next-list').innerHTML = `
+  <li><strong>Add to cart</strong> keeps this part and its file in this browser. Add as many parts as you like.</li>
+  ${configured
+    ? `<li>At checkout, log in or continue as a guest. Placing the order costs nothing.</li>
+  <li>We check every file and set the final price. Then you pay by card or on pickup, and your bill prints.</li>`
+    : `<li>Online ordering isn't open yet: from the cart you can email us the whole list.</li>
+  <li>We reply with the final price and a ready date. Nothing prints until you approve.</li>`}`;
+cart.count().then(n => { $('#go-cart').hidden = !n; });
 
 form.addEventListener('submit', async e => {
   e.preventDefault();
   if (!geo) return;
   if (!form.city.value.trim()) { msg($('#msg'), 'Please add your city in step 3 so we know where the part is going.', true); form.city.focus(); return; }
-  if (!configured) return emailEstimate();
-  if (!user) {
-    $('#msg').innerHTML = `<p>No account needed: continue as a guest and track your order on this device.</p>
-      <div class="cta-row"><button class="btn btn-sm press" type="button" id="as-guest">Continue as guest</button></div>
-      <p class="small">Or <a href="login.html?next=estimate.html">log in</a> / <a href="signup.html">create an account</a> to get updates by email
-      (you'll need to choose the file again afterwards).</p>`;
-    $('#as-guest').onclick = async () => {
-      try { user = await startGuest(); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
-      msg($('#msg'), `You're ordering as ${identity(user.id).name}.`);
-      form.requestSubmit();
-    };
-    return;
+  const c = calc(), o = c.o;
+  try {
+    await cart.add({
+      file, filename: file.name.slice(-200), currency: c.s.currency, lo: c.lo, hi: c.hi,
+      // Columns for public.orders. Price, payout and status are recomputed by the database.
+      order: {
+        ...o, filename: file.name.slice(-200),
+        city: form.city.value.trim(), zip: form.zip.value.trim() || null,
+        fulfillment: form.fulfillment.value, notes: form.notes.value.trim() || null,
+        size_x: geo.size[0], size_y: geo.size[1], size_z: geo.size[2],
+        est_weight_g: Math.max(0.1, c.grams),
+      },
+      details: {
+        Size: `${geo.size.map(d => d.toFixed(1)).join(' × ')} mm`,
+        Material: shortName(c.m), Colors: o.color_choices.join(', '),
+        Strength: `${strengthLabel()} (${o.infill}% infill)`, Quantity: String(o.quantity),
+        Weight: `${c.grams} g per part`, Rush: o.rush ? `Yes (+${+c.s.rush_pct}%)` : 'No',
+        [c.delivery ? 'Local delivery' : 'Pickup']: c.place,
+        ...(form.notes.value.trim() ? { Notes: form.notes.value.trim() } : {}),
+      },
+    });
+  } catch (err) {
+    return msg($('#msg'), err.message, true);
   }
-  const o = opts(), btn = $('#place');
-  btn.disabled = true;
-  msg($('#msg'), 'Uploading your file…');
-  const path = `${user.id}/${crypto.randomUUID()}.stl`;
-  const up = await sb.storage.from('stl').upload(path, file, { contentType: 'model/stl' });
-  if (up.error) { btn.disabled = false; return msg($('#msg'), 'Upload failed: ' + up.error.message, true); }
-  msg($('#msg'), 'Creating your order…');
-  // Price, payout and status are recomputed by the database; these values only need to pass its checks.
-  const { data, error } = await sb.from('orders').insert({
-    ...o, file_path: path, filename: file.name.slice(-200),
-    city: form.city.value.trim(), zip: form.zip.value.trim() || null,
-    fulfillment: form.fulfillment.value, notes: form.notes.value.trim() || null,
-    size_x: geo.size[0], size_y: geo.size[1], size_z: geo.size[2],
-    est_weight_g: Math.max(0.1, estimateWeight(geo, o.infill, material().density)),
-  }).select('id').single();
-  if (error) { btn.disabled = false; return msg($('#msg'), 'Order failed: ' + error.message, true); }
-  location.href = 'track.html?id=' + data.id;
+  location.href = 'cart.html?added=' + encodeURIComponent(file.name);
 });
 </script>
 </body>

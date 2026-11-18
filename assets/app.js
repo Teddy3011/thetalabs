@@ -16,7 +16,7 @@ export const materialText = o => (o.material || 'pla').toUpperCase();
 export const colorText = o => o.color_choices?.length ? o.color_choices.join(', ') : `${o.colors} color${o.colors > 1 ? 's' : ''}`;
 export const date = d => new Date(d).toLocaleString();
 
-export const STATUS = { open: 'Queued', accepted: 'Accepted', printing: 'Printing', ready: 'Ready', completed: 'Picked up', cancelled: 'Cancelled' };
+export const STATUS = { quote: 'Checking file', priced: 'Awaiting payment', open: 'Queued', accepted: 'Accepted', printing: 'Printing', ready: 'Ready', completed: 'Picked up', cancelled: 'Cancelled' };
 export const statusText = o => o.status === 'completed' && o.fulfillment === 'delivery' ? 'Delivered' : STATUS[o.status];
 export const tag = o => `<span class="tag" data-s="${o.status}">${esc(statusText(o))}</span>`;
 

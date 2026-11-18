@@ -51,6 +51,7 @@
 </script>
 <script src="assets/script.js" defer></script>
 <script src="assets/home.js" defer></script>
+<script type="module">import { count } from './assets/cart.js'; count();</script>
 <script type="module">
 // Show the Login/Account menu item only once accounts are live (assets/config.js has real Supabase values).
 import { SUPABASE_URL } from './assets/config.js';
@@ -93,6 +94,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
         <li><a href="#faq">Questions</a></li>
         <li><a href="estimate.html">Instant estimate</a></li>
         <li><a href="printers.html">For printer owners</a></li>
+        <li><a href="cart.html">Cart <span class="cart-count" data-cart-count hidden></span></a></li>
         <li hidden><a href="login.html" data-auth-link>Login</a></li>
       </ul>
       <div class="nav-extra">

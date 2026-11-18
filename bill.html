@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Your order | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/estimate.css">
+<link rel="stylesheet" href="assets/shop.css">
+<script>
+(() => { try { if (new URLSearchParams(location.search).has('motion') || !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion'); } catch (e) {} })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="./">Home</a></li>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="cart.html">Cart <span class="cart-count" data-cart-count hidden></span></a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="shop">
+  <div class="wrap">
+    <p class="kicker" id="ref">Order</p>
+    <h1 id="title">Your order.</h1>
+    <p class="shop-lead" id="lead"></p>
+    <div id="gate"></div>
+    <p class="msg" id="msg" role="status"></p>
+
+    <div class="bill-grid" id="bill" hidden>
+      <div class="slip-printer" id="printer"><div class="slip" id="slip"></div></div>
+      <div>
+        <div id="pay" hidden>
+          <h2>Pay for your order</h2>
+          <p class="small">Your final price is confirmed. Choose how to pay; printing starts once you do.</p>
+          <div class="cta-row">
+            <button class="btn press" type="button" id="pay-card" hidden>Pay <span id="pay-sum"></span> by card</button>
+            <button class="btn btn-ghost" type="button" id="pay-pickup">Pay on pickup</button>
+          </div>
+          <p class="small" id="card-note"></p>
+        </div>
+        <section id="status" aria-labelledby="status-title">
+          <h2 id="status-title">Your parts</h2>
+          <ul class="part-list" id="parts"></ul>
+          <p class="small">This page updates live.</p>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, $, esc, range, msg, statusText, tag, requireConfig, requireUser, isGuest } from './assets/app.js';
+import { CARD_PAYMENTS } from './assets/config.js';
+import { stage, total, slip, slipHtml, steps, money } from './assets/bill.js';
+import { count } from './assets/cart.js';
+
+count();
+const params = new URLSearchParams(location.search), cartId = params.get('cart') || '';
+const fromStripe = params.has('paid');
+const COPY = {
+  checking: ['We\'re checking your files.', 'We look at every part and set its final price. Nothing is charged yet. This page updates as soon as it\'s priced.'],
+  priced: ['Your final price is ready.', 'Pay by card, or choose to pay when you pick up. Printing starts once you do.'],
+  paid: ['Your bill.', ''],
+  cancelled: ['This order was cancelled.', 'Email info@thetalab3d.shop with any questions.'],
+};
+let printer = null, lastStage = null, guest = false;
+
+function draw(orders) {
+  const st = stage(orders), live = orders.filter(o => o.status !== 'cancelled'), cur = live[0]?.currency || orders[0].currency;
+  const pickup = live.length && live.every(o => o.payment === 'pickup');
+  $('#ref').textContent = `Order ${cartId.slice(0, 8).toUpperCase()}`;
+  $('#title').textContent = COPY[st][0];
+  $('#lead').textContent = st === 'paid'
+    ? (pickup ? `You pay ${money(total(orders), cur)} when you pick up. Your parts are in the print queue.` : 'Paid by card. Your parts are in the print queue.')
+    : COPY[st][1];
+  if (guest && st !== 'cancelled') $('#lead').insertAdjacentHTML('beforeend', ' <span class="small">You ordered as a guest, so we can\'t email you: keep this page, or <a href="account.html">add an email</a>.</span>');
+  if (fromStripe && st === 'priced') msg($('#msg'), 'Stripe has your payment. Confirming it here, which takes a few seconds…');
+  else if (fromStripe && st === 'paid') msg($('#msg'), '');
+
+  $('#bill').hidden = false;
+  $('#bill').dataset.stage = st;
+  // the paper slip: only once there is a confirmed price to print
+  const showSlip = st === 'priced' || st === 'paid';
+  $('#printer').hidden = !showSlip;
+  if (showSlip) {
+    const lines = slip(orders);
+    if (printer) { printer.update(slipHtml(lines), lines.length); if (lastStage && lastStage !== st) printer.print(); }
+    else $('#slip').innerHTML = slipHtml(lines);
+  }
+  lastStage = st;
+
+  $('#pay').hidden = st !== 'priced' || fromStripe;
+  const card = CARD_PAYMENTS && cur === 'USD';
+  $('#pay-card').hidden = !card;
+  $('#pay-sum').textContent = money(total(orders), cur);
+  $('#card-note').textContent = card ? 'Card payments go through Stripe\'s secure checkout page. You come back here afterwards.'
+    : 'Online card payment isn\'t available yet' + (cur === 'USD' ? '.' : ` for ${cur} orders.`) + ' Choose pay on pickup, or email us to arrange an invoice.';
+
+  $('#parts').innerHTML = orders.map(o => `<li class="part">
+    <div class="part-head"><strong>${esc(o.filename)}</strong>${tag(o)}</div>
+    <p class="small">${o.quantity} × ${esc((o.material || 'pla').toUpperCase())} · ${esc((o.color_choices || []).join(', '))} ·
+      ${o.final_price != null ? `final price ${money(o.final_price, o.currency)}` : `estimate ${range(+o.price_low, +o.price_high, o.currency)}`}</p>
+    ${o.payment ? `<ol class="track">${steps(o).map(s => `<li class="${s.done ? 'done' : s.now ? 'now' : ''}">${s.name}</li>`).join('')}</ol>` : ''}
+  </li>`).join('');
+}
+
+if (requireConfig($('#gate'))) {
+  const user = await requireUser();
+  if (user) {
+    guest = isGuest(user) && !user.email;
+    const load = async () => {
+      const { data, error } = await sb.from('orders').select('*').eq('cart_id', cartId).order('created_at');
+      if (error) return msg($('#msg'), error.message, true);
+      if (!data.length) return $('#gate').innerHTML = '<p class="msg err">Order not found. Check <a href="account.html">My orders</a>.</p>';
+      draw(data);
+    };
+    printer = await import('./assets/receipt.js').then(m => m.mount($('#printer'))).catch(() => null);
+    await load();
+    sb.channel('cart-' + cartId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cart_id=eq.${cartId}` }, load)
+      .subscribe();
+    if (fromStripe) setTimeout(load, 4000);  // in case the live update arrives before the payment is recorded
+
+    $('#pay-card').addEventListener('click', async () => {
+      $('#pay-card').disabled = true;
+      msg($('#msg'), 'Opening Stripe checkout…');
+      const { data, error } = await sb.functions.invoke('create-checkout', { body: { cart_id: cartId } });
+      if (error || !data?.url) { $('#pay-card').disabled = false; return msg($('#msg'), 'Card payment couldn\'t start: ' + (data?.error || error?.message || 'unknown error'), true); }
+      location.href = data.url;
+    });
+    $('#pay-pickup').addEventListener('click', async () => {
+      if (!confirm('Pay when you pick up your parts? Printing starts now, and you pay the confirmed price at pickup.')) return;
+      const { error } = await sb.rpc('pay_on_pickup', { cart: cartId });
+      if (error) return msg($('#msg'), error.message, true);
+      load();
+    });
+  }
+}
+</script>
+</body>
+</html>

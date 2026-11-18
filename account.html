@@ -94,7 +94,7 @@ if (requireConfig($('#gate'))) {
             <thead><tr><th>Placed</th><th>File</th><th>Material · colors</th><th>Qty</th><th>Estimate</th><th>Status</th><th></th></tr></thead>
             <tbody>${data.map(o => `<tr>
               <td>${date(o.created_at)}</td><td>${esc(o.filename)}</td><td>${materialText(o)} · ${esc(colorText(o))}</td><td>${o.quantity}</td>
-              <td>${priceText(o)}</td><td>${tag(o)}</td><td><a href="track.html?id=${o.id}">Track</a></td>
+              <td>${priceText(o)}</td><td>${tag(o)}</td><td><a href="${o.cart_id ? `bill.html?cart=${o.cart_id}` : `track.html?id=${o.id}`}">${o.status === 'priced' ? 'Pay' : 'Track'}</a></td>
             </tr>`).join('')}</tbody></table></div>`;
     }
     await load();

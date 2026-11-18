@@ -33,14 +33,14 @@ drop trigger if exists on_auth_user_email on auth.users;
 create trigger on_auth_user_email after update of email on auth.users
   for each row when (new.email is distinct from old.email) execute function public.sync_profile_email();
 
--- 3. Anyone can make a guest account, so a guest may have at most 3 orders in progress at once.
+-- 3. Anyone can make a guest account, so a guest may have at most 10 parts in progress (one full cart).
 -- ponytail: a per-account cap; add Supabase's CAPTCHA (Auth → Bot protection) if guests start making many accounts.
 create or replace function public.guest_order_limit() returns trigger
 language plpgsql set search_path = public as $$
 begin
   if coalesce((auth.jwt() ->> 'is_anonymous')::boolean, false)
-     and (select count(*) from orders where customer_id = auth.uid() and status in ('open', 'accepted', 'printing', 'ready')) >= 3 then
-    raise exception 'Guest accounts can have 3 orders in progress. Add an email in My orders to place more.';
+     and (select count(*) from orders where customer_id = auth.uid() and status not in ('completed', 'cancelled')) >= 10 then
+    raise exception 'Guest accounts can have 10 parts in progress. Add an email in My orders to order more.';
   end if;
   return new;
 end $$;

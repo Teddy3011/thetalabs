@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cart | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/shop.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="./">Home</a></li>
+        <li><a href="estimate.html">Estimate</a></li>
+        <li><a href="cart.html" aria-current="page">Cart <span class="cart-count" data-cart-count hidden></span></a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="shop">
+  <div class="wrap">
+    <p class="kicker">Cart</p>
+    <h1>Your parts.</h1>
+    <p class="msg" id="added" role="status" hidden></p>
+
+    <div class="shop-grid">
+      <section aria-labelledby="items-title">
+        <h2 id="items-title" class="sr-only">Parts in your cart</h2>
+        <ul class="tickets" id="items"><li class="tickets-empty">Loading…</li></ul>
+        <p><a href="estimate.html">+ Add another part</a></p>
+      </section>
+
+      <aside class="checkout" aria-labelledby="checkout-title" id="checkout" hidden>
+        <h2 id="checkout-title">Checkout</h2>
+        <dl class="stats">
+          <div><dt>Parts</dt><dd id="n-items"></dd></div>
+          <div class="total"><dt>Estimate</dt><dd id="sum"></dd></div>
+        </dl>
+        <p class="small">An estimate. We confirm the final price of every part before you pay anything.</p>
+        <div id="steps-live" hidden>
+          <ol class="next-list">
+            <li><strong>Place your order.</strong> Nothing is charged. Your files are uploaded to us.</li>
+            <li>We check every file and set the final price, usually within a day.</li>
+            <li>On your order page, pay by card or choose pay on pickup. Then your bill prints and printing starts.</li>
+          </ol>
+          <div id="who"></div>
+          <div class="cta-row"><button class="btn press" type="button" id="place">Place order · no charge</button></div>
+        </div>
+        <div id="steps-email" hidden>
+          <ol class="next-list">
+            <li><strong>Email this cart</strong> opens your email app with every part listed. Nothing is sent until you press send there.</li>
+            <li><strong>Attach each STL file</strong> to that email yourself. They can't be attached for you.</li>
+            <li>We reply with the final price and a ready date. Nothing prints until you approve, and you pay on pickup or by invoice.</li>
+          </ol>
+          <div class="cta-row">
+            <button class="btn press" type="button" id="email">Email this cart</button>
+            <button class="btn btn-ghost" type="button" id="copy">Copy cart</button>
+          </div>
+        </div>
+        <p class="msg" id="msg" role="status"></p>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap"><p class="small">© 2026 Theta Labs 3D · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></div>
+</footer>
+
+<script type="module">
+import { sb, configured, $, esc, money, range, msg, getUser, startGuest, isGuest, identity } from './assets/app.js';
+import * as cart from './assets/cart.js';
+
+let items = [], user = null;
+const added = new URLSearchParams(location.search).get('added');
+if (added) { $('#added').hidden = false; $('#added').textContent = `Added ${added} to your cart.`; history.replaceState(null, '', 'cart.html'); }
+
+async function render() {
+  items = await cart.list();
+  cart.count();
+  $('#checkout').hidden = !items.length;
+  $('#items').innerHTML = items.map(it => `<li class="ticket">
+      <div class="ticket-head"><strong>${esc(it.filename)}</strong><span class="ticket-price">${range(it.lo, it.hi, it.currency)}</span></div>
+      <dl>${Object.entries(it.details).map(([k, v]) => `<div><dt>${esc(k)}</dt><dd>${esc(v)}</dd></div>`).join('')}</dl>
+      <button class="btn btn-sm btn-ghost" type="button" data-remove="${it.id}">Remove</button>
+    </li>`).join('') || '<li class="tickets-empty">Your cart is empty. <a href="estimate.html">Get an estimate</a> and add a part.</li>';
+  if (!items.length) return;
+  const cur = items[0].currency, lo = items.reduce((t, i) => t + i.lo, 0), hi = items.reduce((t, i) => t + i.hi, 0);
+  $('#n-items').textContent = items.length;
+  $('#sum').textContent = range(Math.round(lo * 100) / 100, Math.round(hi * 100) / 100, cur);
+}
+$('#items').addEventListener('click', async e => {
+  const b = e.target.closest('[data-remove]');
+  if (!b) return;
+  await cart.remove(b.dataset.remove);
+  render();
+});
+
+// ---------- checkout: online once accounts are live, otherwise by email ----------
+async function who() {
+  if (!configured) return;
+  user = await getUser();
+  $('#who').innerHTML = user
+    ? `<p class="who-line">${identity(user.id).svg(32, '')}<span>Ordering as <strong>${isGuest(user) ? identity(user.id).name + ' (guest)' : 'your account'}</strong></span></p>`
+    : `<p>No account needed.</p>
+       <div class="cta-row"><button class="btn btn-ghost btn-sm" type="button" id="as-guest">Continue as guest</button>
+       <a class="btn btn-ghost btn-sm" href="login.html?next=cart.html">Log in</a></div>
+       <p class="small">Guests track their order on this device. <a href="signup.html">Create an account</a> to get updates by email.</p>`;
+  $('#place').disabled = !user;
+  $('#as-guest')?.addEventListener('click', async () => {
+    try { user = await startGuest(); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
+    who();
+  });
+}
+
+$('#place').addEventListener('click', async () => {
+  if (!user || !items.length) return;
+  const btn = $('#place'), cartId = crypto.randomUUID();
+  btn.disabled = true;
+  for (const [i, it] of items.entries()) {
+    msg($('#msg'), `Uploading ${i + 1} of ${items.length}: ${it.filename}…`);
+    const path = `${user.id}/${crypto.randomUUID()}.stl`;
+    const up = await sb.storage.from('stl').upload(path, it.file, { contentType: 'model/stl' });
+    let error = up.error;
+    if (!error) ({ error } = await sb.from('orders').insert({ ...it.order, file_path: path, cart_id: cartId }));
+    if (error) {
+      btn.disabled = false;
+      // parts already sent are out of the cart and on the order page; the rest stay here to try again
+      msg($('#msg'), `${it.filename} couldn't be sent: ${error.message}` + (i ? ` The first ${i} part(s) went through: see your order page.` : ''), true);
+      if (i) $('#msg').insertAdjacentHTML('beforeend', ` <a href="bill.html?cart=${cartId}">Open order page</a>`);
+      return render();
+    }
+    await cart.remove(it.id);
+  }
+  location.href = 'bill.html?cart=' + cartId;
+});
+
+function cartText(withoutNotes) {
+  return items.map((it, i) => [`Part ${i + 1}: ${it.filename} (I'll attach it)`,
+    ...Object.entries(it.details).filter(([k]) => !(withoutNotes && k === 'Notes')).map(([k, v]) => `  ${k}: ${v}`),
+    `  Website estimate: ${range(it.lo, it.hi, it.currency)}`].join('\n')).join('\n\n');
+}
+$('#email').addEventListener('click', () => {
+  const link = body => 'mailto:info@thetalab3d.shop?subject=' + encodeURIComponent(`3D print order: ${items.length} part${items.length > 1 ? 's' : ''}`) + '&body=' + encodeURIComponent(body);
+  let url = link(cartText()), cut = false;
+  if (url.length > 1900) { url = link(cartText(true)); cut = true; }  // some email apps ignore longer links
+  if (url.length > 1900) return msg($('#msg'), 'This cart is too long for an email link. Press Copy cart and paste it into an email to info@thetalab3d.shop.', true);
+  location.href = url;
+  msg($('#msg'), 'Your email app should open with every part listed. Attach each STL file, then send it: your request reaches us only once you do.'
+    + (cut ? ' Your notes were too long for the link: press Copy cart and paste them in.' : '') + ' Nothing opened? Use Copy cart.');
+});
+$('#copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText('To: info@thetalab3d.shop\n\n' + cartText()); msg($('#msg'), 'Copied. Paste it into an email to info@thetalab3d.shop and attach each STL file.'); }
+  catch { msg($('#msg'), 'Your browser blocked copying. Email info@thetalab3d.shop with your files and the details above.', true); }
+});
+
+$('#steps-live').hidden = !configured;
+$('#steps-email').hidden = configured;
+await render();
+who();
+</script>
+</body>
+</html>

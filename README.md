@@ -33,7 +33,11 @@ assets/config.js         Supabase project URL + anon key (public)
 assets/app.js            shared client code; assets/stl.js STL math + pricing (tested by `npm test`)
 supabase/schema.sql      tables, RLS, job functions, storage bucket — run once in the SQL editor
 supabase/002_*.sql       later changes (materials, colors) — run after schema.sql, in order
-supabase/003_*.sql       guest accounts: guests are always customers, at most 3 orders in progress, email sync
+supabase/003_*.sql       guest accounts: guests are always customers, at most 10 parts in progress, email sync
+supabase/004_*.sql       cart + payment: quote → priced → open, set_final_price, pay_on_pickup, mark_cart_paid
+supabase/functions/      create-checkout (opens Stripe Checkout) and stripe-webhook (marks a cart paid)
+cart.html, bill.html     cart (files kept in the browser until checkout) and the order page: bill, payment, live status
+assets/cart.js           the cart (IndexedDB)   assets/bill.js  order stage + receipt lines (tested by npm test)
 assets/avatar.js         a guest's geometric avatar and name ("Orange Gear 42"), worked out from the account id
 ```
 
@@ -57,7 +61,22 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
    browser. Guests can add an email later on My orders to keep the account. Without this setting the button shows a
    "not available" message and customers log in as before. If guests start creating lots of accounts, turn on
    **Authentication → Bot and abuse protection (CAPTCHA)**.
-8. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
+8. **Cart and payments:** run `supabase/004_cart_payments.sql`. Orders now wait as quotes: open **admin.html**,
+   enter each part's final price and press **Set price**. When every part in a cart is priced, the customer's order
+   page offers **Pay on pickup**, and **Pay by card** once Stripe is set up (next step). Printers only see a job after
+   it is paid or set to pay on pickup.
+9. **Card payments (Stripe, USD only):** install the Supabase CLI, then, logged in to your project:
+   ```bash
+   supabase functions deploy create-checkout
+   supabase functions deploy stripe-webhook --no-verify-jwt
+   supabase secrets set STRIPE_SECRET_KEY=sk_... SITE_URL=https://thetalab3d.shop
+   ```
+   In Stripe → Developers → Webhooks, add an endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`
+   for the event `checkout.session.completed`, copy its signing secret and run
+   `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`. Finally set `CARD_PAYMENTS = true` in `assets/config.js`.
+   Use Stripe's test keys first (card 4242 4242 4242 4242), then swap to live keys. Keys only ever go into
+   `supabase secrets`, never into the site's files.
+10. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
    accept it as the printer.
 
 Notes: the free plan caps uploads at 50 MB per file, so the bucket limit is 50 MB (60 MB needs the Pro plan; see the
