@@ -61,11 +61,12 @@ export async function requireUser() {
 }
 
 // Nav: Login ↔ Account, shown only once accounts are live
-getUser().then(user => {
+export function showUser(user) {
   for (const a of document.querySelectorAll('[data-auth-link]')) {
     a.parentElement.hidden = !configured;
     if (user) a.innerHTML = identity(user.id).svg(24, '') + `<span>${isGuest(user) ? identity(user.id).name : 'Account'}</span>`;
     else a.textContent = 'Login';
     a.href = user ? 'account.html' : 'login.html';
   }
-});
+}
+getUser().then(showUser);

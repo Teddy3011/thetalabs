@@ -85,7 +85,7 @@
 </footer>
 
 <script type="module">
-import { sb, configured, $, esc, money, range, msg, getUser, startGuest, isGuest, identity } from './assets/app.js';
+import { sb, configured, $, esc, money, range, msg, getUser, startGuest, isGuest, identity, showUser } from './assets/app.js';
 import * as cart from './assets/cart.js';
 
 let items = [], user = null;
@@ -125,7 +125,7 @@ async function who() {
        <p class="small">Guests track their order on this device. <a href="signup.html">Create an account</a> to get updates by email.</p>`;
   $('#place').disabled = !user;
   $('#as-guest')?.addEventListener('click', async () => {
-    try { user = await startGuest(); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
+    try { user = await startGuest(); showUser(user); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
     who();
   });
 }
