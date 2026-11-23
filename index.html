@@ -58,11 +58,12 @@ import { detect, remember } from './assets/region.js';
 const sw = document.querySelector('.market-switch');
 let touched = false, auto = false;
 sw?.addEventListener('click', e => { const b = e.target.closest('[data-market]'); if (b && !auto) { touched = true; remember(b.dataset.market.toUpperCase()); } });
-detect().then(({ region }) => {
-  if (touched || region !== 'IN') return;
-  auto = true; sw?.querySelector('[data-market="in"]')?.click(); auto = false;  // a detected country isn't saved as a choice
-});
+const show = region => { auto = true; sw?.querySelector(`[data-market="${region.toLowerCase()}"]`)?.click(); auto = false; };
+detect().then(({ region }) => { if (!touched) show(region); });  // a detected country isn't saved as a choice
+// the world-map picker (assets/region-picker.js) saves the choice itself; just follow it
+addEventListener('theta-region', e => { touched = true; show(e.detail); });
 </script>
+<script type="module" src="assets/region-picker.js"></script>
 <script type="module">
 // Show the Login/Account menu item only once accounts are live (assets/config.js has real Supabase values).
 import { SUPABASE_URL } from './assets/config.js';
@@ -113,6 +114,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
         <a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a>
       </div>
     </nav>
+    <button class="region-pill" id="region-pill" type="button" aria-label="Change country"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><circle cx="8" cy="8" r="6.5"/><path d="M1.5 8h13M8 1.5c2 2 2.6 4.2 2.6 6.5S10 12.5 8 14.5C6 12.5 5.4 10.3 5.4 8S6 3.5 8 1.5"/></svg><span>US</span></button>
     <a class="btn btn-sm header-cta" href="estimate.html"><span class="cta-long">Get an&nbsp;</span>Estimate</a>
     <!-- Staggered off-canvas menu (JS only). Without JS the nav above stays a plain link list. -->
     <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">

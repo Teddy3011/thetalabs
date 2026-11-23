@@ -38,6 +38,8 @@ supabase/004_*.sql       cart + payment: quote → priced → open, set_final_pr
 supabase/functions/      create-checkout (opens Stripe Checkout), stripe-webhook (marks a cart paid), whatsapp-notify
 supabase/005_*.sql       WhatsApp opt-in numbers (customer + admin only) and a sent-once log
 supabase/006_*.sql       payment safety: one open card checkout per cart, prices locked while it's open, payment_issue
+assets/region-picker.js  first-visit world map (pick US or India); assets/world-map.svg is generated from Natural Earth
+                         110m (public domain, world-atlas 2.0.2): dots on a 2.2° grid, US and India in their own groups
 assets/status.js         the customer-facing label, timeline and next step for every order status (one source of truth)
 assets/checkout.js       sends the cart: retries join the same order, no duplicate uploads or orders (tested)
 my-printer.html          live screen for whoever runs the printer: current job, estimated time left, big buttons, queue

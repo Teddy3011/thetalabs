@@ -210,3 +210,63 @@ html:not(.motion) .slab { transition: none !important; }
 .last-mail { margin-top: var(--space-3); font-size: var(--step-0) !important; }
 .last a:not(.btn) { color: var(--ink); font-weight: 700; }
 .home .site-footer { border-top: 0; }
+
+/* ---------- first-visit world map: pick the United States or India (assets/region-picker.js) ---------- */
+.region-pill {
+  display: inline-flex; align-items: center; gap: 0.4rem; min-height: 44px; margin-left: auto; padding: 0 0.75rem;
+  border: 1px solid var(--line); border-radius: 999px; background: none; color: var(--fg);
+  font: var(--step--1) var(--font-mono); letter-spacing: 0.04em; cursor: pointer;
+}
+.region-pill:is(:hover, :focus-visible) { border-color: var(--accent); }
+.region-pill svg { width: 1rem; height: 1rem; fill: none; stroke: var(--accent); stroke-width: 1.2; }
+.site-header .region-pill + .header-cta { margin-left: 0.5rem; }
+.map-open { overflow: hidden; }
+.map-dialog {
+  position: fixed; inset: 0; z-index: 100; overflow-y: auto; display: grid; align-items: center;
+  padding-block: var(--space-4); background: var(--bg);
+}
+.map-inner { display: grid; justify-items: center; text-align: center; }
+.map-inner .kicker { justify-content: center; }
+.map-inner h2 { font-size: clamp(2.6rem, 1rem + 6vw, 5.5rem); line-height: 0.95; letter-spacing: -0.03em; }
+.map-lead { max-width: 34rem; margin-top: var(--space-2); font-size: var(--step-1); color: var(--muted); }
+.map-stage { position: relative; width: min(100%, 60rem); margin-block: var(--space-3); }
+.world { display: block; width: 100%; height: auto; }
+.world path { fill: none; stroke-linecap: round; stroke-width: 1.05; }
+.w-land { stroke: #343833; }
+.w-us, .w-in { stroke: #6f8a10; transition: stroke 0.25s ease; }
+.map-stage:is([data-hover="US"]) .w-us, .map-stage:is([data-hover="IN"]) .w-in { stroke: var(--accent); }
+.w-pin { fill: var(--bg); stroke: var(--accent); stroke-width: 0.45; }
+.map-spot {
+  position: absolute; translate: -50% -50%; display: grid; place-items: center; width: 2.75rem; height: 2.75rem;
+  border: 0; border-radius: 50%; background: none; cursor: pointer;
+}
+.map-spot::before { content: ""; position: absolute; inset: 0; border: 2px solid var(--accent); border-radius: 50%; opacity: 0.7; }
+.map-spot span {
+  position: absolute; top: calc(100% + 0.2rem); padding: 0.15rem 0.5rem; border-radius: 4px; background: var(--accent);
+  color: var(--ink); font: 700 0.8rem var(--font-sans); white-space: nowrap;
+}
+html.motion .map-spot::before { animation: map-ping 1.8s ease-out infinite; }
+@keyframes map-ping { from { transform: scale(0.5); opacity: 0.9; } to { transform: scale(1.4); opacity: 0; } }
+.map-choices { display: grid; gap: 0.75rem; width: min(100%, 44rem); padding-bottom: var(--layer); }
+@media (min-width: 640px) { .map-choices { grid-template-columns: 1fr 1fr; } }
+.map-choice {
+  display: grid; gap: 0.2rem; justify-items: start; padding: 1rem 1.2rem; text-align: left; cursor: pointer;
+  border: 2px solid var(--field-line); border-radius: 12px; background: var(--surface); color: var(--fg);
+  box-shadow: 0 var(--layer) 0 var(--line); transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.map-choice strong { font: 600 var(--step-2)/1.1 var(--font-display); font-variation-settings: "SOFT" 50, "WONK" 1; }
+.map-choice span { font: var(--step--1) var(--font-mono); color: var(--accent); }
+.map-choice small { color: var(--muted); font-size: var(--step--1); }
+.map-choice em { margin-top: 0.3rem; padding: 0.1rem 0.5rem; border-radius: 999px; background: var(--accent); color: var(--ink); font: normal 0.72rem var(--font-mono); }
+.map-choice:is(:hover, :focus-visible) { border-color: var(--accent); }
+.map-choice:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.map-choice:active { transform: translateY(var(--layer)); box-shadow: 0 0 0 var(--line); }
+.map-skip { margin-top: var(--space-3); min-height: 44px; padding: 0 1rem; border: 0; background: none; color: var(--muted); font: inherit; text-decoration: underline; cursor: pointer; }
+.map-skip:is(:hover, :focus-visible) { color: var(--fg); }
+html.motion .map-dialog { animation: map-in 0.45s var(--ease-out) both; }
+html.motion .map-dialog.is-closing { animation: map-out 0.35s ease-in both; }
+@keyframes map-in { from { opacity: 0; } }
+@keyframes map-out { to { opacity: 0; } }
+html.motion .map-stage .world { animation: map-rise 0.9s var(--ease-out) 0.1s both; }
+@keyframes map-rise { from { opacity: 0; transform: translateY(12px) scale(0.98); } }
+@media (max-width: 479.98px) { .map-spot span { font-size: 0.7rem; } .region-pill { padding: 0 0.6rem; } }
