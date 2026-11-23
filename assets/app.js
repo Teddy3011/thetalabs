@@ -64,7 +64,7 @@ export async function requireUser() {
 export function showUser(user) {
   for (const a of document.querySelectorAll('[data-auth-link]')) {
     a.parentElement.hidden = !configured;
-    if (user) a.innerHTML = identity(user.id).svg(24, '') + `<span>${isGuest(user) ? identity(user.id).name : 'Account'}</span>`;
+    if (user) a.innerHTML = identity(user.id).img(24, '') + `<span>${isGuest(user) ? identity(user.id).name : 'Account'}</span>`;
     else a.textContent = 'Login';
     a.href = user ? 'account.html' : 'login.html';
   }

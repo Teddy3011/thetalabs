@@ -1,23 +1,22 @@
-// Guest identity: a periodic-table tile and a name like "Carbon-13", both worked out from the account id,
-// so the same guest always gets the same ones and nothing extra is stored. No DOM, so tests/avatar.test.mjs runs it in Node.
+// Guest identity: an illustrated face and a name like "Carbon-13", both worked out from the account id, so the same
+// guest always gets the same ones and nothing extra is stored. No DOM, so tests/avatar.test.mjs runs it in Node.
+//
+// Faces: DiceBear's "Lorelei" style by Lisa Wischofsky (CC0 1.0, no credit required), served as an image by
+// api.dicebear.com. It gets a scrambled seed, never the account id, so the face can't be linked back to the account;
+// it does see the visitor's IP address (privacy.html). If it can't be reached, the background colour shows instead.
 
-const COLORS = [  // filament colours from the site palette: [fill, ink that reads on it]
-  ['#c8ff00', '#090a09'], ['#efeadd', '#090a09'], ['#ff5a1f', '#090a09'],
-  ['#8ecbe0', '#090a09'], ['#2a2d29', '#efeadd'], ['#090a09', '#c8ff00'],
-];
+const BACKGROUNDS = ['c8ff00', 'efeadd', 'ff5a1f', '8ecbe0'];  // light site colours (the faces are drawn in black), no leading #
 // All 118 elements in order, so an element's position + 1 is its atomic number.
-const ELEMENTS = ('H Hydrogen,He Helium,Li Lithium,Be Beryllium,B Boron,C Carbon,N Nitrogen,O Oxygen,F Fluorine,Ne Neon,' +
-  'Na Sodium,Mg Magnesium,Al Aluminium,Si Silicon,P Phosphorus,S Sulfur,Cl Chlorine,Ar Argon,K Potassium,Ca Calcium,' +
-  'Sc Scandium,Ti Titanium,V Vanadium,Cr Chromium,Mn Manganese,Fe Iron,Co Cobalt,Ni Nickel,Cu Copper,Zn Zinc,' +
-  'Ga Gallium,Ge Germanium,As Arsenic,Se Selenium,Br Bromine,Kr Krypton,Rb Rubidium,Sr Strontium,Y Yttrium,Zr Zirconium,' +
-  'Nb Niobium,Mo Molybdenum,Tc Technetium,Ru Ruthenium,Rh Rhodium,Pd Palladium,Ag Silver,Cd Cadmium,In Indium,Sn Tin,' +
-  'Sb Antimony,Te Tellurium,I Iodine,Xe Xenon,Cs Caesium,Ba Barium,La Lanthanum,Ce Cerium,Pr Praseodymium,Nd Neodymium,' +
-  'Pm Promethium,Sm Samarium,Eu Europium,Gd Gadolinium,Tb Terbium,Dy Dysprosium,Ho Holmium,Er Erbium,Tm Thulium,Yb Ytterbium,' +
-  'Lu Lutetium,Hf Hafnium,Ta Tantalum,W Tungsten,Re Rhenium,Os Osmium,Ir Iridium,Pt Platinum,Au Gold,Hg Mercury,' +
-  'Tl Thallium,Pb Lead,Bi Bismuth,Po Polonium,At Astatine,Rn Radon,Fr Francium,Ra Radium,Ac Actinium,Th Thorium,' +
-  'Pa Protactinium,U Uranium,Np Neptunium,Pu Plutonium,Am Americium,Cm Curium,Bk Berkelium,Cf Californium,Es Einsteinium,Fm Fermium,' +
-  'Md Mendelevium,No Nobelium,Lr Lawrencium,Rf Rutherfordium,Db Dubnium,Sg Seaborgium,Bh Bohrium,Hs Hassium,Mt Meitnerium,Ds Darmstadtium,' +
-  'Rg Roentgenium,Cn Copernicium,Nh Nihonium,Fl Flerovium,Mc Moscovium,Lv Livermorium,Ts Tennessine,Og Oganesson').split(',').map(e => e.split(' '));
+const ELEMENTS = ('Hydrogen,Helium,Lithium,Beryllium,Boron,Carbon,Nitrogen,Oxygen,Fluorine,Neon,Sodium,Magnesium,Aluminium,' +
+  'Silicon,Phosphorus,Sulfur,Chlorine,Argon,Potassium,Calcium,Scandium,Titanium,Vanadium,Chromium,Manganese,Iron,Cobalt,' +
+  'Nickel,Copper,Zinc,Gallium,Germanium,Arsenic,Selenium,Bromine,Krypton,Rubidium,Strontium,Yttrium,Zirconium,Niobium,' +
+  'Molybdenum,Technetium,Ruthenium,Rhodium,Palladium,Silver,Cadmium,Indium,Tin,Antimony,Tellurium,Iodine,Xenon,Caesium,' +
+  'Barium,Lanthanum,Cerium,Praseodymium,Neodymium,Promethium,Samarium,Europium,Gadolinium,Terbium,Dysprosium,Holmium,' +
+  'Erbium,Thulium,Ytterbium,Lutetium,Hafnium,Tantalum,Tungsten,Rhenium,Osmium,Iridium,Platinum,Gold,Mercury,Thallium,Lead,' +
+  'Bismuth,Polonium,Astatine,Radon,Francium,Radium,Actinium,Thorium,Protactinium,Uranium,Neptunium,Plutonium,Americium,' +
+  'Curium,Berkelium,Californium,Einsteinium,Fermium,Mendelevium,Nobelium,Lawrencium,Rutherfordium,Dubnium,Seaborgium,' +
+  'Bohrium,Hassium,Meitnerium,Darmstadtium,Roentgenium,Copernicium,Nihonium,Flerovium,Moscovium,Livermorium,Tennessine,' +
+  'Oganesson').split(',');
 
 // FNV-1a: a small, stable string hash, then xorshift32 so each draw takes fresh bits.
 function bits(id) {
@@ -32,21 +31,16 @@ function bits(id) {
 
 export function identity(id) {
   const r = bits(id);
-  const i = r(ELEMENTS.length), [symbol, element] = ELEMENTS[i], z = i + 1;
+  const z = 1 + r(ELEMENTS.length);
   // Isotope ("mass") number = protons + neutrons. Light elements have about as many neutrons as protons, heavy ones
   // about 1.5 times as many, so this lands near real isotopes (Carbon-12…14, Iron-55…57, Uranium-~235).
   const mass = z === 1 ? 1 + r(3) : z + Math.round(z * (1 + 0.6 * z / 118)) + r(3) - 1;
-  const bg = r(COLORS.length);
-  let band = r(COLORS.length - 1); if (band >= bg) band++;  // the bottom band is always a different colour
-  const [fill, ink] = COLORS[bg], name = `${element}-${mass}`;
-  const small = 'font-family="Space Mono, ui-monospace, monospace" font-size="6"';
-  const svg = (size = 40, label = name) =>
-    `<svg class="avatar" width="${size}" height="${size}" viewBox="0 0 40 40" role="img" aria-label="${label}">` +
-    `<rect width="40" height="40" rx="8" fill="${fill}"/>` +
-    `<path d="M0 31h40v3H0z" fill="${COLORS[band][0]}"/>` +
-    `<text x="4" y="8.5" fill="${ink}" ${small}>${z}</text>` +
-    `<text x="36" y="8.5" fill="${ink}" ${small} text-anchor="end">${mass}</text>` +
-    `<text x="20" y="${symbol.length > 1 ? 25.5 : 26}" fill="${ink}" font-family="Fraunces, Georgia, serif" font-weight="600" ` +
-    `font-size="${symbol.length > 1 ? 16 : 19}" text-anchor="middle">${symbol}</text></svg>`;
-  return { name, svg, color: fill, symbol, z, mass };
+  const name = `${ELEMENTS[z - 1]}-${mass}`;
+  const bg = BACKGROUNDS[r(BACKGROUNDS.length)];
+  const seed = [r(1e9), r(1e9)].map(n => n.toString(36)).join('');  // scrambled: not the account id
+  const src = `https://api.dicebear.com/9.x/lorelei/svg?seed=${seed}&backgroundColor=${bg}&radius=20`;
+  // alt '' when the name is already shown next to the picture, so screen readers don't read it twice
+  const img = (size = 40, alt = name) =>
+    `<img class="avatar" src="${src}" width="${size}" height="${size}" alt="${alt}" loading="lazy" style="background:#${bg}">`;
+  return { name, img, color: `#${bg}`, z, mass };
 }

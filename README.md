@@ -38,7 +38,7 @@ supabase/004_*.sql       cart + payment: quote → priced → open, set_final_pr
 supabase/functions/      create-checkout (opens Stripe Checkout) and stripe-webhook (marks a cart paid)
 cart.html, bill.html     cart (files kept in the browser until checkout) and the order page: bill, payment, live status
 assets/cart.js           the cart (IndexedDB)   assets/bill.js  order stage + receipt lines (tested by npm test)
-assets/avatar.js         a guest's periodic-table avatar and isotope name ("Carbon-13"), worked out from the account id
+assets/avatar.js         a guest's face (DiceBear "Lorelei", CC0, loaded from api.dicebear.com) and isotope name ("Carbon-13"), from the account id
 ```
 
 Until `assets/config.js` has real values, those pages show a "Preview · not live yet" notice and the estimator still works.

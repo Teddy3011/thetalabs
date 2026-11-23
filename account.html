@@ -54,7 +54,7 @@ if (requireConfig($('#gate'))) {
     const guest = isGuest(user), me = identity(user.id);
     $('#me').innerHTML = guest ? `
       <div class="guest-card">
-        ${me.svg(72, '')}
+        ${me.img(72, '')}
         <div>
           <p class="small">Guest account</p>
           <h2>${me.name}</h2>

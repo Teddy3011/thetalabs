@@ -118,7 +118,7 @@ async function who() {
   if (!configured) return;
   user = await getUser();
   $('#who').innerHTML = user
-    ? `<p class="who-line">${identity(user.id).svg(32, '')}<span>Ordering as <strong>${isGuest(user) ? identity(user.id).name + ' (guest)' : 'your account'}</strong></span></p>`
+    ? `<p class="who-line">${identity(user.id).img(32, '')}<span>Ordering as <strong>${isGuest(user) ? identity(user.id).name + ' (guest)' : 'your account'}</strong></span></p>`
     : `<p>No account needed.</p>
        <div class="cta-row"><button class="btn btn-ghost btn-sm" type="button" id="as-guest">Continue as guest</button>
        <a class="btn btn-ghost btn-sm" href="login.html?next=cart.html">Log in</a></div>
