@@ -105,7 +105,7 @@ if (requireConfig($('#gate'))) {
             ? `<form class="price-form" data-price="${o.id}"><input type="number" name="price" step="0.01" min="0.01" required
                 value="${o.final_price ?? o.price_high}" aria-label="Final price for ${esc(o.filename)}"><button class="btn btn-sm" type="submit">${o.status === 'quote' ? 'Set price' : 'Update'}</button></form>`
             : o.final_price != null ? money(o.final_price, o.currency) : '—'}</td>
-          <td>${o.payment === 'card' ? `Card${o.paid_at ? `, paid ${date(o.paid_at)}` : ''}` : o.payment === 'pickup' ? 'On pickup' : '—'}</td>
+          <td>${o.payment === 'card' ? `Card${o.paid_at ? `, paid ${date(o.paid_at)}` : ''}` : o.payment === 'pickup' ? 'On pickup' : o.stripe_session ? 'Card checkout open' : '—'}${o.payment_issue ? `<br><span class="small" style="color:var(--alert)">⚠ ${esc(o.payment_issue)}</span>` : ''}</td>
           <td>${money(o.payout, o.currency)}</td>
           <td>${esc(o.city)} ${esc(o.zip || '')} · ${o.fulfillment}</td><td>${esc(o.printer?.email || '—')}</td>
           <td><select data-order="${o.id}" aria-label="Status">${Object.entries(STATUS).map(([k, v]) =>

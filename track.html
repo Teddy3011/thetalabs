@@ -78,7 +78,8 @@ if (requireConfig($('#gate'))) {
   } else if (user) {
     // RLS returns nothing unless this is your order (or you're the printer/admin).
     const { data } = await sb.from('orders').select('*').eq('id', id).maybeSingle();
-    if (!data) {
+    if (data?.cart_id) location.replace('bill.html?cart=' + data.cart_id);  // one order page for everything
+    else if (!data) {
       $('#order').innerHTML = '<p class="msg err">Order not found. Check <a href="account.html">My orders</a>.</p>';
     } else {
       render(data);

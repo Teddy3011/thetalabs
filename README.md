@@ -37,6 +37,9 @@ supabase/003_*.sql       guest accounts: guests are always customers, at most 10
 supabase/004_*.sql       cart + payment: quote → priced → open, set_final_price, pay_on_pickup, mark_cart_paid
 supabase/functions/      create-checkout (opens Stripe Checkout), stripe-webhook (marks a cart paid), whatsapp-notify
 supabase/005_*.sql       WhatsApp opt-in numbers (customer + admin only) and a sent-once log
+supabase/006_*.sql       payment safety: one open card checkout per cart, prices locked while it's open, payment_issue
+assets/status.js         the customer-facing label, timeline and next step for every order status (one source of truth)
+assets/checkout.js       sends the cart: retries join the same order, no duplicate uploads or orders (tested)
 my-printer.html          live screen for whoever runs the printer: current job, estimated time left, big buttons, queue
 cart.html, bill.html     cart (files kept in the browser until checkout) and the order page: bill, payment, live status
 assets/cart.js           the cart (IndexedDB)   assets/bill.js  order stage + receipt lines (tested by npm test)
@@ -76,6 +79,9 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
    In Stripe → Developers → Webhooks, add an endpoint `https://<project>.supabase.co/functions/v1/stripe-webhook`
    for the event `checkout.session.completed`, copy its signing secret and run
    `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`. Finally set `CARD_PAYMENTS = true` in `assets/config.js`.
+   **Run `supabase/006_payment_safety.sql` first.** It keeps one open checkout per cart, locks prices while a customer
+   is paying, and records any mismatched payment as a `payment_issue` (shown on admin.html) instead of losing it.
+   In the Stripe webhook, also select `checkout.session.expired` and `checkout.session.async_payment_succeeded`.
    Use Stripe's test keys first (card 4242 4242 4242 4242), then swap to live keys. Keys only ever go into
    `supabase secrets`, never into the site's files.
 10. **WhatsApp updates (optional, automatic):** customers who tick "Send me order updates on WhatsApp" at
@@ -98,8 +104,9 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
        ```
     5. Supabase → Database → Webhooks → Create: table `orders`, event **Update**, type **Supabase Edge Functions**,
        function `whatsapp-notify`, and an HTTP header `x-webhook-secret` with the same WEBHOOK_SECRET.
-    Meta charges per message (utility templates cost a few cents). Until this is set up, opted-in numbers are simply
-    stored and nothing is sent.
+    6. Set `WHATSAPP_UPDATES = true` in `assets/config.js`. Until then checkout doesn't offer WhatsApp at all,
+       so nobody gives a number that nothing would be sent to.
+    Meta charges per message (utility templates cost a few cents).
 11. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
    accept it as the printer.
 

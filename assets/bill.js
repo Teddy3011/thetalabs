@@ -47,10 +47,3 @@ export function slipHtml(lines) {
     : l.type === 'divider' ? '<hr class="slip-rule">'
     : `<p class="slip-row${l.type === 'total' ? ' slip-total' : ''}"><span>${esc(l.label)}</span><span>${esc(l.value)}</span></p>`).join('');
 }
-
-// Where one part is on the way to the customer. "accepted" (a printer took it) still reads as queued.
-export function steps(o) {
-  const names = ['Queued', 'Printing', 'Ready', o.fulfillment === 'delivery' ? 'Delivered' : 'Picked up'];
-  const at = { open: 0, accepted: 0, printing: 1, ready: 2, completed: 3 }[o.status] ?? -1;
-  return names.map((name, i) => ({ name, done: i < at || at === 3, now: i === at && at < 3 }));
-}

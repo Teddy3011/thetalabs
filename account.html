@@ -45,7 +45,8 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, msg, date, materialText, colorText, priceText, tag, requireConfig, requireUser, getProfile, isGuest, identity } from './assets/app.js';
+import { sb, $, esc, msg, date, materialText, colorText, priceText, requireConfig, requireUser, getProfile, isGuest, identity } from './assets/app.js';
+import { customerStatus } from './assets/status.js';
 
 if (requireConfig($('#gate'))) {
   const user = await requireUser();
@@ -91,10 +92,10 @@ if (requireConfig($('#gate'))) {
       $('#orders').innerHTML = !data.length
         ? '<p class="msg">No orders yet. <a href="estimate.html">Get an estimate</a> to place one.</p>'
         : `<div class="table"><table>
-            <thead><tr><th>Placed</th><th>File</th><th>Material · colors</th><th>Qty</th><th>Estimate</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Placed</th><th>File</th><th>Material · colors</th><th>Qty</th><th>Price</th><th>Status</th><th></th></tr></thead>
             <tbody>${data.map(o => `<tr>
               <td>${date(o.created_at)}</td><td>${esc(o.filename)}</td><td>${materialText(o)} · ${esc(colorText(o))}</td><td>${o.quantity}</td>
-              <td>${priceText(o)}</td><td>${tag(o)}</td><td><a href="${o.cart_id ? `bill.html?cart=${o.cart_id}` : `track.html?id=${o.id}`}">${o.status === 'priced' ? 'Pay' : 'Track'}</a></td>
+              <td>${o.final_price != null ? priceText({ ...o, price_low: o.final_price, price_high: o.final_price }) : priceText(o)}</td><td><span class="tag" data-s="${o.status}">${esc(customerStatus(o).label)}</span></td><td><a href="${o.cart_id ? `bill.html?cart=${o.cart_id}` : `track.html?id=${o.id}`}">${o.status === 'priced' ? 'Pay' : 'Track'}</a></td>
             </tr>`).join('')}</tbody></table></div>`;
     }
     await load();

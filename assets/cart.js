@@ -22,6 +22,11 @@ async function run(mode, fn) {
 
 export const list = async () => ((await run('readonly', s => s.getAll())) || []).sort((a, b) => a.added - b.added);
 export const remove = id => run('readwrite', s => s.delete(id));
+// Remember where a part's file was uploaded, so a retry reuses it (assets/checkout.js).
+export async function savePath(id, uploadPath) {
+  const it = await run('readonly', s => s.get(id));
+  if (it) await run('readwrite', s => s.put({ ...it, uploadPath }));
+}
 export const clear = () => run('readwrite', s => s.clear());
 export async function add(item) {
   const items = await list();

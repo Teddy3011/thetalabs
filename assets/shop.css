@@ -40,6 +40,11 @@
 .wa-number :is(select, input) { min-height: 48px; padding: 0.6rem 0.75rem; border: 2px solid var(--field-line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: var(--step-0) var(--font-sans); }
 .wa-number :is(select, input):focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 0; }
 .wa .small { margin-top: 0.5rem; }
+/* which parts went through after a partial failure */
+.send-report { margin: 0.5rem 0; padding: 0; list-style: none; font: var(--step--1) var(--font-mono); }
+.send-report .ok { color: var(--accent); }
+.send-report .bad { color: var(--alert); }
+.msg p + p { margin-top: 0.5rem; }
 /* reuses the estimate page's numbered list */
 .next-list { display: grid; gap: 0.6rem; padding: 0; list-style: none; counter-reset: next; }
 .next-list li { counter-increment: next; position: relative; padding-left: 2.25rem; color: var(--muted); }
@@ -49,6 +54,13 @@
 /* order page */
 .bill-grid { display: grid; gap: var(--space-4); align-items: start; }
 @media (min-width: 900px) { .bill-grid { grid-template-columns: minmax(0, 24rem) minmax(0, 1fr); gap: var(--space-5); } .bill-grid[data-stage="checking"] { grid-template-columns: 1fr; } }
+.keep { margin-bottom: var(--space-4); padding: var(--space-3); border: 1px solid var(--accent); border-radius: 14px; }
+.keep h2 { font-size: var(--step-2); }
+.keep .small + .small, .keep-form { margin-top: 0.75rem; }
+.keep-form { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.keep-form input { flex: 1 1 14rem; min-height: 44px; padding: 0.6rem 0.75rem; border: 2px solid var(--field-line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: var(--step-0) var(--font-sans); }
+.keep-form input:focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 0; }
+.part-next { margin-top: 0.6rem; font-size: var(--step--1); color: var(--fg); }
 #pay { margin-bottom: var(--space-4); padding-bottom: var(--space-3); border-bottom: 2px solid var(--line); }
 .part-list { display: grid; gap: var(--space-2); padding: 0; list-style: none; }
 .part { padding: 1rem 1.1rem; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }

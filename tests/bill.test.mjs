@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { stage, total, slip, steps } from '../assets/bill.js';
+import { stage, total, slip } from '../assets/bill.js';
 
 const o = (over = {}) => ({ cart_id: 'abcd1234-0000', filename: 'part.stl', quantity: 1, material: 'pla', color_choices: ['Black'],
   currency: 'USD', status: 'quote', final_price: null, payment: null, paid_at: null, amount_paid: null,
@@ -26,8 +26,4 @@ assert.match(pickup, /BILL · PAY ON PICKUP/); assert.match(pickup, /Due on pick
 const cardNoTimestamp = text(slip([o({ status: 'priced', final_price: 20, payment: 'card' })]));
 assert.doesNotMatch(cardNoTimestamp, /PAID/);
 
-// status steps
-assert.deepEqual(steps(o({ status: 'accepted' })).map(s => s.now), [true, false, false, false]);
-assert.deepEqual(steps(o({ status: 'completed', fulfillment: 'delivery' })).map(s => s.done), [true, true, true, true]);
-assert.equal(steps(o({ status: 'completed', fulfillment: 'delivery' }))[3].name, 'Delivered');
 console.log('bill tests passed');

@@ -132,7 +132,7 @@
                     <label class="choice"><input type="radio" name="region" value="IN"><span>India</span></label>
                   </div>
                   <p class="small" id="region-how" hidden></p>
-                  <p class="small" id="region-note" hidden>India is a developing market for us: orders there are by inquiry.</p>
+                  <p class="small" id="region-note" hidden>India is by inquiry only for now: there's no pickup there yet. You can still get an estimate and email it to us from the cart.</p>
                 </fieldset>
               </div>
 
@@ -180,7 +180,7 @@
           <p class="price-ticket-label">Your estimate</p>
           <p class="price-ticket-price" id="quote-price">Add a file to see your price</p>
           <p class="price-ticket-meta" id="quote-meta"></p>
-          <p class="price-ticket-note">An estimate, not a final price. We confirm the final quote by email before anything is printed.</p>
+          <p class="price-ticket-note">An estimate, not a final price. We set the confirmed price after checking your file, before anything is printed.</p>
         </div>
       </aside>
     </div>
@@ -218,6 +218,7 @@
 import { sb, configured, $, esc, money, range, msg, getUser, getProfile } from './assets/app.js';
 import * as cart from './assets/cart.js';
 import { detect as detectRegion, remember as rememberRegion } from './assets/region.js';
+import { CARD_PAYMENTS } from './assets/config.js';
 import { parseSTL, measure, estimateWeight, priceRange, DEFAULT_SETTINGS, DEFAULT_MATERIALS, COLORS } from './assets/stl.js';
 
 const MAX_BYTES = 50 * 1024 * 1024;  // Supabase free plan upload cap; the bucket enforces it too
@@ -334,7 +335,7 @@ function render() {
     o.rush && { type: 'row', label: 'Rush', value: `+${+c.s.rush_pct}%` },
     { type: 'divider' },
     { type: 'total', label: 'Estimate', value: price },
-    { type: 'text', text: 'This is an estimate, not a receipt. We confirm the final price by email before anything is printed. No payment has been taken.' },
+    { type: 'text', text: 'This is an estimate, not a receipt. We confirm the final price before anything is printed. No payment has been taken.' },
   ].filter(Boolean);
   if (printer) printer.update(slipHtml(lines), lines.length); else $('#slip').innerHTML = slipHtml(lines);
 }
@@ -495,7 +496,7 @@ $('#next-list').innerHTML = `
   <li><strong>Add to cart</strong> keeps this part and its file in this browser. Add as many parts as you like.</li>
   ${configured
     ? `<li>At checkout, log in or continue as a guest. Placing the order costs nothing.</li>
-  <li>We check every file and set the final price. Then you pay by card or on pickup, and your bill prints.</li>`
+  <li>We check every file and set the final price. Then you ${CARD_PAYMENTS ? 'pay by card or ' : ''}choose pay on pickup, and your bill prints.</li>`
     : `<li>Online ordering isn't open yet: from the cart you can email us the whole list.</li>
   <li>We reply with the final price and a ready date. Nothing prints until you approve.</li>`}`;
 cart.count().then(n => { $('#go-cart').hidden = !n; });

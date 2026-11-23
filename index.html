@@ -165,7 +165,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
             <label title="Sky"><input type="radio" name="filament" value="sky"><span style="--c:#8ecbe0"><i class="sr-only">Sky</i></span></label>
           </fieldset>
         </div>
-        <p class="maker-note">A demo to play with: slide to print, drag to turn. The shapes and colors are examples.</p>
+        <p class="maker-note"><strong>Try it:</strong> drag the slider to print layer by layer, drag the object to turn it, or pick a shape and a color. This is a demo, not your order; your own file is priced on the <a href="estimate.html">estimate page</a>.</p>
       </form>
     </div>
   </section>
@@ -294,9 +294,10 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
         <ol class="flow">
           <li><strong>Instant estimate</strong><span>Drop an STL file into the estimate tool. Your browser measures it and shows a price straight away, with no card needed.</span></li>
           <li><strong>We look at your file</strong><span>A person checks that it will print well and whether it needs supports or changes.</span></li>
-          <li><strong>Final quote by email</strong><span>You get the confirmed price and a ready date.</span></li>
-          <li><strong>You approve</strong><span>Nothing is printed before you say yes.</span></li>
-          <li><strong>Pay on pickup or by invoice</strong><span>There is no online payment step.</span></li>
+          <li><strong>Final price on your order page</strong><span>Place your order at no charge. We set the confirmed price for each part, and your order page updates.</span></li>
+          <li><strong>You decide</strong><span>Nothing is printed until you accept the price. If it isn't right for you, tell us and we cancel it at no charge.</span></li>
+          <!-- OWNER-INPUT: once card payments are switched on (CARD_PAYMENTS in assets/config.js), add "or by card". -->
+          <li><strong>Pay at pickup</strong><span>Choose pay on pickup and printing starts. You pay the confirmed price when you collect your part.</span></li>
         </ol>
         <div>
           <!-- Shown by script.js. Without JS both markets are listed side by side. -->
@@ -321,7 +322,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
               <dl>
                 <div><dt>Minimum order</dt><dd>₹300</dd></div>
                 <div><dt>Multicolor upgrade</dt><dd>+₹150</dd></div>
-                <div><dt>Availability</dt><dd>By inquiry · developing market</dd></div>
+                <div><dt>Availability</dt><dd>By inquiry only · no pickup in India yet</dd></div>
               </dl>
             </article>
           </div>
@@ -358,7 +359,7 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
         </details>
         <details>
           <summary>When do I approve the quote, and when do I pay?</summary>
-          <p>We email the final price and ready date. Printing starts only after you approve it. You pay on pickup or by invoice.</p>
+          <p>Your final price appears on your order page; nothing is charged before that. Printing starts when you accept it by choosing pay on pickup, and you pay when you collect your part. If you have an account we can also reach you by email; guests should keep their order page or add an email to it.</p>
         </details>
         <details>
           <summary>How do I tell you where each color goes?</summary>
@@ -373,6 +374,20 @@ if (!SUPABASE_URL.includes('YOUR_')) for (const a of document.querySelectorAll('
           <summary>How quickly can I get my part?</summary>
           <!-- OWNER-INPUT: confirm typical turnaround -->
           <p>Most small parts are ready in 2–4 days. Larger or multi-part orders take longer, and your quote includes a ready date. Need it within 24 hours? Rush costs 25% more, and we confirm before printing that we can make it.</p>
+        </details>
+        <details>
+          <summary>Can I cancel an order?</summary>
+          <!-- OWNER-INPUT: confirm the cancellation policy once printing has started (refund, partial charge, or none). -->
+          <p>Before you accept the final price, yes, at no charge: email info@thetalab3d.shop with your order number. Once printing has started, email us and we'll talk it through; the outcome depends on how far the job has gone.</p>
+        </details>
+        <details>
+          <summary>What if something is wrong with my print?</summary>
+          <!-- OWNER-INPUT: confirm what you offer for a faulty or wrong print (reprint, refund, timeframe to report it). -->
+          <p>Check your part when you collect it and tell us straight away, ideally with a photo, at info@thetalab3d.shop. We'll look at what went wrong and agree a fix with you.</p>
+        </details>
+        <details>
+          <summary>I ordered as a guest. How do I see my order?</summary>
+          <p>A guest order is saved in the browser you ordered from: open My orders there. To open it anywhere, add your email on your order page. If you lose access, email info@thetalab3d.shop with your order number.</p>
         </details>
         <details>
           <summary>Do you ship orders?</summary>

@@ -58,6 +58,16 @@
           </div>
           <p class="small" id="card-note"></p>
         </div>
+        <section class="keep" id="keep" hidden aria-labelledby="keep-title">
+          <h2 id="keep-title">Keep this order</h2>
+          <p class="small">You ordered as a guest, so this order is saved only in this browser, and we have no way to reach you. Add your email to open it from any device and log in later. We'll send one confirmation link; nothing else is emailed automatically.</p>
+          <form class="keep-form" id="keep-form">
+            <label class="sr-only" for="keep-email">Email</label>
+            <input id="keep-email" name="email" type="email" required maxlength="120" autocomplete="email" placeholder="you@example.com">
+            <button class="btn btn-sm press" type="submit">Save my email</button>
+          </form>
+          <p class="small">Or note your order number and email <a href="mailto:info@thetalab3d.shop">info@thetalab3d.shop</a> about it.</p>
+        </section>
         <section id="status" aria-labelledby="status-title">
           <h2 id="status-title">Your parts</h2>
           <ul class="part-list" id="parts"></ul>
@@ -73,9 +83,10 @@
 </footer>
 
 <script type="module">
-import { sb, $, esc, range, msg, statusText, tag, requireConfig, requireUser, isGuest } from './assets/app.js';
+import { sb, $, esc, range, msg, requireConfig, requireUser, isGuest } from './assets/app.js';
+import { customerStatus } from './assets/status.js';
 import { CARD_PAYMENTS } from './assets/config.js';
-import { stage, total, slip, slipHtml, steps, money } from './assets/bill.js';
+import { stage, total, slip, slipHtml, money } from './assets/bill.js';
 import { count } from './assets/cart.js';
 
 count();
@@ -87,7 +98,7 @@ const COPY = {
   paid: ['Your bill.', ''],
   cancelled: ['This order was cancelled.', 'Email info@thetalab3d.shop with any questions.'],
 };
-let printer = null, lastStage = null, guest = false;
+let printer = null, lastStage = null, guest = false, contact = false, confirmWait = 0;
 
 function draw(orders) {
   const st = stage(orders), live = orders.filter(o => o.status !== 'cancelled'), cur = live[0]?.currency || orders[0].currency;
@@ -97,9 +108,14 @@ function draw(orders) {
   $('#lead').textContent = st === 'paid'
     ? (pickup ? `You pay ${money(total(orders), cur)} when you pick up. Your parts are in the print queue.` : 'Paid by card. Your parts are in the print queue.')
     : COPY[st][1];
-  if (guest && st !== 'cancelled') $('#lead').insertAdjacentHTML('beforeend', ' <span class="small">You ordered as a guest, so we can\'t email you: keep this page, or <a href="account.html">add an email</a>.</span>');
-  if (fromStripe && st === 'priced') msg($('#msg'), 'Stripe has your payment. Confirming it here, which takes a few seconds…');
+  $('#keep').hidden = !guest || st === 'cancelled';
+  // Back from Stripe: wait for our records, and say so plainly if it's slow, so nobody pays twice.
+  if (fromStripe && st === 'priced') msg($('#msg'), confirmWait < 60
+    ? 'Stripe has your payment. Confirming it here, which usually takes a few seconds…'
+    : `Your payment is taking longer than usual to confirm. Please don't pay again. If this page hasn't updated in a few minutes, email info@thetalab3d.shop with order ${cartId.slice(0, 8).toUpperCase()}.`);
   else if (fromStripe && st === 'paid') msg($('#msg'), '');
+  const issue = live.find(o => o.payment_issue);
+  if (issue) msg($('#msg'), 'We received your card payment, but something didn\'t match our records (for example the price changed while you were paying). You won\'t be asked to pay again; we\'re checking it.' + (contact ? '' : ` If you have questions, email info@thetalab3d.shop with order ${cartId.slice(0, 8).toUpperCase()}.`));
 
   $('#bill').hidden = false;
   $('#bill').dataset.stage = st;
@@ -120,18 +136,37 @@ function draw(orders) {
   $('#card-note').textContent = card ? 'Card payments go through Stripe\'s secure checkout page. You come back here afterwards.'
     : 'Online card payment isn\'t available yet' + (cur === 'USD' ? '.' : ` for ${cur} orders.`) + ' Choose pay on pickup, or email us to arrange an invoice.';
 
-  $('#parts').innerHTML = orders.map(o => `<li class="part">
-    <div class="part-head"><strong>${esc(o.filename)}</strong>${tag(o)}</div>
+  // each part: the same label, timeline and next step as My orders and the tracker (assets/status.js)
+  $('#parts').innerHTML = orders.map(o => {
+    const c = customerStatus(o, { contact });
+    return `<li class="part">
+    <div class="part-head"><strong>${esc(o.filename)}</strong><span class="tag" data-s="${o.status}">${esc(c.label)}</span></div>
     <p class="small">${o.quantity} × ${esc((o.material || 'pla').toUpperCase())} · ${esc((o.color_choices || []).join(', '))} ·
       ${o.final_price != null ? `final price ${money(o.final_price, o.currency)}` : `estimate ${range(+o.price_low, +o.price_high, o.currency)}`}</p>
-    ${o.payment ? `<ol class="track">${steps(o).map(s => `<li class="${s.done ? 'done' : s.now ? 'now' : ''}">${s.name}</li>`).join('')}</ol>` : ''}
-  </li>`).join('');
+    ${c.step >= 0 ? `<ol class="track">${c.steps.map((s, i) => `<li class="${i < c.step || c.step === c.steps.length - 1 ? 'done' : i === c.step ? 'now' : ''}">${esc(s)}</li>`).join('')}</ol>` : ''}
+    <p class="part-next">${esc(c.next)}</p>
+  </li>`;
+  }).join('');
 }
 
 if (requireConfig($('#gate'))) {
   const user = await requireUser();
   if (user) {
     guest = isGuest(user) && !user.email;
+    contact = !!user.email;  // the only channel we can be sure works today; WhatsApp is checked below
+    // WhatsApp: did the opt-in at checkout fail? Say so, and that the order itself is fine.
+    let waFailed = null;
+    try { waFailed = sessionStorage.getItem('wa-failed:' + cartId); } catch {}
+    if (waFailed) msg($('#msg'), `Your order went through, but WhatsApp updates couldn't be turned on (${waFailed}). Keep this page to follow your order${guest ? ', or save your email below' : ''}.`, true);
+    $('#keep-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const email = e.target.email.value.trim(), b = e.target.querySelector('button');
+      b.disabled = true;
+      const { error } = await sb.auth.updateUser({ email });
+      b.disabled = false;
+      // only claim the link was sent when Supabase accepted the request
+      msg($('#msg'), error ? `That didn't work: ${error.message}` : `Check ${email} for a confirmation link. Once you open it, this order is saved to that email and you can log in from any device.`, !!error);
+    });
     const load = async () => {
       const { data, error } = await sb.from('orders').select('*').eq('cart_id', cartId).order('created_at');
       if (error) return msg($('#msg'), error.message, true);
@@ -143,7 +178,9 @@ if (requireConfig($('#gate'))) {
     sb.channel('cart-' + cartId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `cart_id=eq.${cartId}` }, load)
       .subscribe();
-    if (fromStripe) setTimeout(load, 4000);  // in case the live update arrives before the payment is recorded
+    if (fromStripe) {  // live updates can arrive before the payment is recorded: check every 5 s for 2 minutes
+      const t = setInterval(async () => { confirmWait += 5; await load(); if (confirmWait >= 120 || lastStage !== 'priced') clearInterval(t); }, 5000);
+    }
 
     $('#pay-card').addEventListener('click', async () => {
       $('#pay-card').disabled = true;

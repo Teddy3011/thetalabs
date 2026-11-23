@@ -54,16 +54,17 @@
           <div class="total"><dt>Estimate</dt><dd id="sum"></dd></div>
         </dl>
         <p class="small">An estimate. We confirm the final price of every part before you pay anything.</p>
+        <p class="msg" id="pending" hidden></p>
         <div id="steps-live" hidden>
           <ol class="next-list">
             <li><strong>Place your order.</strong> Nothing is charged. Your files are uploaded to us.</li>
-            <li>We check every file and set the final price, usually within a day.</li>
-            <li>On your order page, pay by card or choose pay on pickup. Then your bill prints and printing starts.</li>
+            <li>We check every file and set the final price. It appears on your order page.</li>
+            <li id="step-pay">On your order page, choose pay on pickup. Then your bill prints and printing starts.</li>
           </ol>
           <div id="who"></div>
-          <fieldset class="wa">
+          <fieldset class="wa" id="wa" hidden>
             <legend class="sr-only">WhatsApp updates</legend>
-            <label class="wa-opt"><input type="checkbox" id="wa-on"> <span>Send me order updates on WhatsApp</span></label>
+            <label class="wa-opt"><input type="checkbox" id="wa-on"> <span>Send me order updates on WhatsApp (I agree to get messages about this order)</span></label>
             <div class="wa-number" id="wa-number" hidden>
               <select id="wa-cc" aria-label="Country code"><option value="1">+1 US</option><option value="91">+91 India</option></select>
               <input id="wa-phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="20" placeholder="WhatsApp number" aria-label="WhatsApp number">
@@ -73,6 +74,7 @@
           <div class="cta-row"><button class="btn press" type="button" id="place">Place order · no charge</button></div>
         </div>
         <div id="steps-email" hidden>
+          <p class="small" id="india-note" hidden>Orders in India are by inquiry while our Hyderabad printer network is still being set up. Email us this cart and we'll reply about price and timing.</p>
           <ol class="next-list">
             <li><strong>Email this cart</strong> opens your email app with every part listed. Nothing is sent until you press send there.</li>
             <li><strong>Attach each STL file</strong> to that email yourself. They can't be attached for you.</li>
@@ -95,7 +97,9 @@
 
 <script type="module">
 import { sb, configured, $, esc, money, range, msg, getUser, startGuest, isGuest, identity, showUser } from './assets/app.js';
+import { CARD_PAYMENTS, WHATSAPP_UPDATES } from './assets/config.js';
 import * as cart from './assets/cart.js';
+import { checkout } from './assets/checkout.js';
 
 let items = [], user = null;
 const added = new URLSearchParams(location.search).get('added');
@@ -115,6 +119,15 @@ async function render() {
   $('#n-items').textContent = items.length;
   $('#sum').textContent = range(Math.round(lo * 100) / 100, Math.round(hi * 100) / 100, cur);
   $('#wa-cc').value = cur === 'INR' ? '91' : '1';
+  // India is inquiry-only for now: no pickup there yet, so those carts are emailed rather than placed.
+  const live = configured && cur !== 'INR';
+  $('#steps-live').hidden = !live;
+  $('#steps-email').hidden = live;
+  $('#india-note').hidden = cur !== 'INR';
+  // parts that failed last time join the order the others went into
+  const p = pending.get();
+  $('#pending').hidden = !(p && user && p.userId === user.id);
+  if (!$('#pending').hidden) $('#pending').innerHTML = `These parts will be added to your order <a href="bill.html?cart=${esc(p.cartId)}">${esc(p.cartId.slice(0, 8).toUpperCase())}</a>, which already has the parts that went through.`;
 }
 $('#items').addEventListener('click', async e => {
   const b = e.target.closest('[data-remove]');
@@ -132,12 +145,13 @@ async function who() {
     : `<p>No account needed.</p>
        <div class="cta-row"><button class="btn btn-ghost btn-sm" type="button" id="as-guest">Continue as guest</button>
        <a class="btn btn-ghost btn-sm" href="login.html?next=cart.html">Log in</a></div>
-       <p class="small">Guests track their order on this device. <a href="signup.html">Create an account</a> to get updates by email.</p>`;
+       <p class="small">As a guest your order is saved in this browser. On your order page you can add an email to open it anywhere. Or <a href="signup.html">create an account</a>.</p>`;
   $('#place').disabled = !user;
   $('#as-guest')?.addEventListener('click', async () => {
     try { user = await startGuest(); showUser(user); } catch (err) { return msg($('#msg'), "Guest checkout isn't available right now (" + err.message + '). Please log in or create an account.', true); }
     who();
   });
+  render();
 }
 
 // WhatsApp opt-in: country code from the cart's currency; the number is checked before anything is uploaded.
@@ -149,32 +163,41 @@ const whatsapp = () => {
   return /^\+[1-9][0-9]{7,14}$/.test(full) ? full : false;
 };
 
+// The order a failed checkout started, per customer, so a retry adds to it (assets/checkout.js).
+const PENDING = 'theta-pending-cart';
+const pending = {
+  get: () => { try { return JSON.parse(localStorage.getItem(PENDING)); } catch { return null; } },
+  set: v => { try { localStorage.setItem(PENDING, JSON.stringify(v)); } catch {} },
+  clear: () => { try { localStorage.removeItem(PENDING); } catch {} },
+};
+
 $('#place').addEventListener('click', async () => {
   if (!user || !items.length) return;
   const wa = whatsapp();
   if (wa === false) { msg($('#msg'), 'That WhatsApp number doesn\'t look right. Type it without the country code, for example 480 555 0123.', true); return $('#wa-phone').focus(); }
-  const btn = $('#place'), cartId = crypto.randomUUID();
+  const btn = $('#place');
   btn.disabled = true;
-  for (const [i, it] of items.entries()) {
-    msg($('#msg'), `Uploading ${i + 1} of ${items.length}: ${it.filename}…`);
-    const path = `${user.id}/${crypto.randomUUID()}.stl`;
-    const up = await sb.storage.from('stl').upload(path, it.file, { contentType: 'model/stl' });
-    let error = up.error;
-    if (!error) ({ error } = await sb.from('orders').insert({ ...it.order, file_path: path, cart_id: cartId }));
-    if (error) {
-      btn.disabled = false;
-      // parts already sent are out of the cart and on the order page; the rest stay here to try again
-      msg($('#msg'), `${it.filename} couldn't be sent: ${error.message}` + (i ? ` The first ${i} part(s) went through: see your order page.` : ''), true);
-      if (i) $('#msg').insertAdjacentHTML('beforeend', ` <a href="bill.html?cart=${cartId}">Open order page</a>`);
-      return render();
-    }
-    await cart.remove(it.id);
+  const r = await checkout(items, user.id, {
+    upload: (path, file) => sb.storage.from('stl').upload(path, file, { contentType: 'model/stl' }),
+    insert: row => sb.from('orders').insert(row),
+    remove: cart.remove, savePath: cart.savePath, pending, uuid: () => crypto.randomUUID(),
+    onProgress: (i, it) => msg($('#msg'), `Sending ${i + 1} of ${items.length}: ${it.filename}…`),
+  });
+  if (r.busy) return;
+  if (wa && r.sent.length) {  // the order exists either way; only the updates depend on this, and the order page says if it failed
+    const { error } = await sb.from('order_contacts').insert({ cart_id: r.cartId, whatsapp: wa });
+    if (error && !/duplicate key/.test(error.message)) try { sessionStorage.setItem('wa-failed:' + r.cartId, error.message); } catch {}
   }
-  if (wa) {  // the order went through either way; only the updates depend on this
-    const { error } = await sb.from('order_contacts').insert({ cart_id: cartId, whatsapp: wa });
-    if (error) console.warn('WhatsApp opt-in not saved:', error.message);
-  }
-  location.href = 'bill.html?cart=' + cartId;
+  if (!r.failed.length) return location.href = 'bill.html?cart=' + r.cartId;
+  btn.disabled = false;
+  const ref = r.cartId.slice(0, 8).toUpperCase();
+  $('#msg').classList.add('err');
+  $('#msg').innerHTML = (r.sent.length
+    ? `<p><strong>${r.sent.length} of ${r.sent.length + r.failed.length} parts were sent</strong> as order <a href="bill.html?cart=${esc(r.cartId)}">${ref}</a>. The rest are still in your cart:</p>`
+    : '<p><strong>Nothing was sent.</strong> Your parts are still in your cart:</p>')
+    + `<ul class="send-report">${r.sent.map(n => `<li class="ok">✓ ${esc(n)}</li>`).join('')}${r.failed.map(f => `<li class="bad">✗ ${esc(f.filename)}: ${esc(f.message)}</li>`).join('')}</ul>`
+    + `<p>Press <strong>Place order</strong> again to retry${r.sent.length ? `; they'll be added to order ${ref}` : ''}. If it keeps failing, email info@thetalab3d.shop${r.sent.length ? ` with order ${ref}` : ''}.</p>`;
+  render();
 });
 
 function cartText(withoutNotes) {
@@ -196,8 +219,8 @@ $('#copy').addEventListener('click', async () => {
   catch { msg($('#msg'), 'Your browser blocked copying. Email info@thetalab3d.shop with your files and the details above.', true); }
 });
 
-$('#steps-live').hidden = !configured;
-$('#steps-email').hidden = configured;
+$('#wa').hidden = !WHATSAPP_UPDATES;
+if (CARD_PAYMENTS) $('#step-pay').textContent = 'On your order page, pay by card or choose pay on pickup. Then your bill prints and printing starts.';
 await render();
 who();
 </script>
