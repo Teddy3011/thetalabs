@@ -38,3 +38,36 @@
 .prn .job .btn-ghost:is(:hover, :focus-visible) { border-color: var(--ink); background: rgb(0 0 0 / 0.06); }
 .prn .job :focus-visible { outline-color: var(--ink); }
 .prn .jobs-empty { padding: 1.25rem; border: 1px dashed var(--line); border-radius: 10px; color: var(--muted); }
+
+/* ---------- my-printer.html: the live screen next to the printer ---------- */
+.station { padding-block: clamp(1.5rem, 4vw, 3rem) var(--space-5); }
+.station-grid { display: grid; gap: var(--space-4); align-items: start; }
+@media (min-width: 900px) { .station-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--space-5); } }
+.station-now { display: grid; gap: var(--space-3); align-items: center; }
+@media (min-width: 700px) { .station-now { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+.station .printer { margin: 0 auto; width: min(100%, 28rem); }
+/* the theta logo fills up from the bottom as the job prints (--done: 0 → 1, set by the page) */
+.live .p-logo { clip-path: inset(calc((1 - var(--done, 0)) * 100%) 0 0 0); transition: clip-path 1s ease; }
+.live[data-state="idle"] .p-logo { opacity: 0.25; clip-path: none; }
+.live[data-state="printing"] .p-glow { opacity: 1; }
+html.motion .live[data-state="printing"] .p-carriage { animation: idle-sweep 2.4s ease-in-out infinite running; }
+html.motion .live[data-state="printing"] .p-glow { animation: glow 0.7s ease-in-out infinite; }
+.now-card h1 { font-size: clamp(2.6rem, 1.2rem + 5vw, 5rem); line-height: 0.95; letter-spacing: -0.03em; margin-bottom: var(--space-2); }
+.now-meta { font-size: var(--step-1); color: var(--muted); overflow-wrap: anywhere; }
+.now-meta strong { color: var(--fg); font-size: var(--step-2); }
+.rush-tag { color: var(--orange); font-family: var(--font-mono); font-weight: 400; }
+.now-progress { margin-top: var(--space-3); }
+.now-progress .p-bar { width: 100%; height: 6px; border-radius: 3px; overflow: hidden; }
+.now-progress .p-bar span { transform: scaleX(0); transition: transform 1s ease; }
+.now-progress .small { margin-top: 0.5rem; }
+.station-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: var(--space-3); padding-bottom: var(--layer); }
+.btn.big { min-height: 64px; padding-inline: 1.75rem; font-size: var(--step-1); }  /* easy to hit on a tablet */
+.station-side h2 { font-size: var(--step-2); margin-bottom: var(--space-1); }
+.station-side section + section, .station-side > .small { margin-top: var(--space-3); }
+.queue { display: grid; gap: 0.6rem; padding: 0; list-style: none; }
+.queue li { display: grid; grid-template-columns: 1fr auto; gap: 0.15rem 0.75rem; align-items: center; padding: 0.8rem 1rem; border-radius: 10px; background: var(--paper); color: var(--ink); }
+.queue li strong { overflow-wrap: anywhere; }
+.queue li span { grid-column: 1; font: 0.75rem var(--font-mono); color: #4a4d44; }
+.queue li .btn { grid-row: 1 / span 2; grid-column: 2; }
+.queue li .btn-ghost { color: var(--ink); border-color: var(--ink); }
+.queue .queue-empty { display: block; padding: 0.8rem 1rem; border: 1px dashed var(--line); background: none; color: var(--muted); }

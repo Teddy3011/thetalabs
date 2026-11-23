@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My printer | Theta Labs 3D</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/styles.css">
+<link rel="stylesheet" href="assets/home.css">
+<link rel="stylesheet" href="assets/printers.css">
+<script>
+(() => { try { if (new URLSearchParams(location.search).has('motion') || !matchMedia('(prefers-reduced-motion: reduce)').matches) document.documentElement.classList.add('motion', 'intro-played'); } catch (e) {} })();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.min.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="./" aria-label="Theta Labs 3D home">
+      <svg class="brand-mark" viewBox="0 0 100 150" aria-hidden="true" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+      <span>Theta Labs 3D</span>
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="printers.html">Job board</a></li>
+        <li><a href="my-printer.html" aria-current="page">My printer</a></li>
+        <li hidden><a href="login.html" data-auth-link>Login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<main id="main" class="station">
+  <div class="wrap">
+    <p class="kicker">My printer</p>
+    <div id="gate"></div>
+    <p class="msg" id="msg" role="status"></p>
+
+    <div class="station-grid" id="station" hidden>
+      <section class="station-now" aria-labelledby="now-title">
+        <figure class="printer live" id="art" aria-hidden="true" data-state="idle">
+          <img class="p-frame" src="assets/printer-frame.webp" alt="" width="800" height="747">
+          <img class="p-rail" src="assets/printer-rail.webp" alt="" width="580" height="143">
+          <img class="p-spool" src="assets/printer-spool.webp" alt="" width="80" height="277">
+          <span class="p-bedline"></span>
+          <svg class="p-logo" viewBox="0 0 100 150" focusable="false"><rect x="12" y="12" width="76" height="126" rx="38"/><line x1="12" y1="75" x2="88" y2="75"/></svg>
+          <div class="p-head"><div class="p-carriage"><img src="assets/printer-toolhead.webp" alt="" width="120" height="268"><span class="p-glow"></span></div></div>
+        </figure>
+        <div class="now-card">
+          <h1 id="now-title">Idle.</h1>
+          <p class="now-meta" id="now-meta"></p>
+          <div class="now-progress" id="now-progress" hidden>
+            <span class="p-bar"><span id="now-bar"></span></span>
+            <p class="small" id="now-time"></p>
+          </div>
+          <div class="station-actions" id="now-actions"></div>
+        </div>
+      </section>
+
+      <aside class="station-side">
+        <section aria-labelledby="ready-title" id="ready-box" hidden>
+          <h2 id="ready-title">Ready for pickup</h2>
+          <ul class="queue" id="ready"></ul>
+        </section>
+        <section aria-labelledby="queue-title">
+          <h2 id="queue-title">Up next</h2>
+          <ul class="queue" id="queue"></ul>
+        </section>
+        <p class="small" id="open-count"></p>
+        <p class="small">Time left is an estimate from the part's weight, at about 12 g an hour. Your printer's real time depends on its settings.</p>
+      </aside>
+    </div>
+  </div>
+</main>
+
+<script type="module">
+import { sb, $, esc, msg, materialText, colorText, requireConfig, requireUser, getProfile } from './assets/app.js';
+
+const GRAMS_PER_HOUR = 12;  // ponytail: rough PLA rate for a Bambu A1; store real print times if estimates matter
+const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up'] };
+const hoursFor = o => Math.max(0.25, o.est_weight_g * o.quantity / GRAMS_PER_HOUR);
+const hm = h => h < 1 ? `${Math.max(1, Math.round(h * 60))} min` : `${Math.floor(h)} h ${String(Math.round(h % 1 * 60)).padStart(2, '0')} min`;
+let jobs = [], openCount = 0;
+
+function draw() {
+  const printing = jobs.filter(o => o.status === 'printing'), accepted = jobs.filter(o => o.status === 'accepted'), ready = jobs.filter(o => o.status === 'ready');
+  const now = printing[0] || accepted[0] || null;
+  const art = $('#art');
+  art.dataset.state = now?.status === 'printing' ? 'printing' : 'idle';
+
+  if (!now) {
+    $('#now-title').textContent = 'Idle.';
+    $('#now-meta').textContent = ready.length ? 'Nothing to print. Parts are waiting for pickup.' : 'Nothing to print. Accept a job on the job board.';
+    $('#now-progress').hidden = true;
+    $('#now-actions').innerHTML = '<a class="btn btn-ghost big" href="printers.html">Open the job board</a>';
+    art.style.setProperty('--done', 0);
+  } else {
+    const est = hoursFor(now), started = now.status === 'printing' ? new Date(now.updated_at) : null;
+    const elapsed = started ? (Date.now() - started) / 3600000 : 0, p = started ? Math.min(0.99, elapsed / est) : 0;
+    $('#now-title').textContent = now.status === 'printing' ? 'Printing.' : 'Ready to start.';
+    $('#now-meta').innerHTML = `<strong>${esc(now.filename)}</strong><br>${now.quantity} × ${now.est_weight_g} g · ${materialText(now)} · ${esc(colorText(now))} · ${now.infill}% infill${now.rush ? ' · <b class="rush-tag">RUSH</b>' : ''}`;
+    $('#now-progress').hidden = false;
+    $('#now-bar').style.transform = `scaleX(${p})`;
+    $('#now-time').textContent = started
+      ? (elapsed < est ? `About ${hm(est - elapsed)} left (estimated) · started ${started.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : `Past the ${hm(est)} estimate. Mark it ready when it's done.`)
+      : `Estimated ${hm(est)} to print.`;
+    art.style.setProperty('--done', p);
+    const [to, label] = NEXT[now.status];
+    $('#now-actions').innerHTML = `<button class="btn press big" type="button" data-job="${now.id}" data-to="${to}">${label}</button>
+      <button class="btn btn-ghost big" type="button" data-download="${now.id}">Download file</button>`;
+  }
+
+  const queued = accepted.filter(o => o !== now);
+  $('#queue').innerHTML = queued.map(o => `<li><strong>${esc(o.filename)}</strong><span>${o.quantity} × ${materialText(o)} · ${esc(colorText(o))} · ~${hm(hoursFor(o))}</span>
+      <button class="btn btn-sm btn-ghost" type="button" data-download="${o.id}">Download</button></li>`).join('')
+    || '<li class="queue-empty">Nothing queued.</li>';
+  $('#ready-box').hidden = !ready.length;
+  $('#ready').innerHTML = ready.map(o => `<li><strong>${esc(o.filename)}</strong><span>${o.fulfillment === 'delivery' ? 'Deliver to' : 'Pickup'} · ${esc(o.city)} ${esc(o.zip || '')}</span>
+      <button class="btn btn-sm press" type="button" data-job="${o.id}" data-to="completed">${o.fulfillment === 'delivery' ? 'Mark delivered' : 'Mark picked up'}</button></li>`).join('');
+  $('#open-count').innerHTML = openCount ? `<a href="printers.html">${openCount} open job${openCount > 1 ? 's' : ''} on the job board →</a>` : 'No open jobs on the job board right now.';
+}
+
+if (requireConfig($('#gate'))) {
+  const user = await requireUser();
+  const profile = user && await getProfile(user);
+  let allowed = profile?.role === 'admin';
+  if (profile?.role === 'printer') {
+    const { data: app } = await sb.from('printer_applications').select('status').eq('user_id', user.id).maybeSingle();
+    allowed = app?.status === 'approved';
+  }
+  if (user && !allowed) msg($('#msg'), 'This screen is for approved printer owners. See the job board for how to apply.', true);
+  else if (user) {
+    $('#station').hidden = false;
+    const load = async () => {
+      const { data, error } = await sb.from('orders').select('*').eq('printer_id', user.id).in('status', ['accepted', 'printing', 'ready']).order('accepted_at');
+      if (error) return msg($('#msg'), error.message, true);
+      const open = await sb.from('orders').select('id', { count: 'exact', head: true }).eq('status', 'open');
+      jobs = data; openCount = open.count || 0;
+      draw();
+    };
+    await load();
+    sb.channel('my-printer').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, load).subscribe();
+    setInterval(draw, 30000);  // time left and progress move on their own
+
+    document.addEventListener('click', async e => {
+      const b = e.target.closest('button[data-job], button[data-download]');
+      if (!b) return;
+      b.disabled = true;
+      if (b.dataset.job) {
+        const { error } = await sb.rpc('set_job_status', { order_id: b.dataset.job, new_status: b.dataset.to });
+        if (error) msg($('#msg'), error.message, true); else msg($('#msg'), '');
+        await load();
+      } else {
+        const o = jobs.find(j => j.id === b.dataset.download);
+        const r = await sb.storage.from('stl').createSignedUrl(o.file_path, 300, { download: o.filename });  // 5-minute link
+        if (r.error) msg($('#msg'), r.error.message, true); else location.href = r.data.signedUrl;
+        b.disabled = false;
+      }
+    });
+
+    // Keep a tablet next to the printer awake while this screen is open (where the browser allows it).
+    const wake = () => navigator.wakeLock?.request('screen').catch(() => {});
+    wake();
+    document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && wake());
+  }
+}
+</script>
+</body>
+</html>
