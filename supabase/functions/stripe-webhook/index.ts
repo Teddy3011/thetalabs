@@ -1,7 +1,7 @@
 // Stripe → "checkout.session.completed" → mark that cart paid, which opens its parts to printers.
 // Deploy: supabase functions deploy stripe-webhook --no-verify-jwt   Secret: STRIPE_WEBHOOK_SECRET (README, "Payments").
 // Stripe can't send a Supabase login, so instead every request is checked against Stripe's signature.
-import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 import { verifyStripeSignature } from './verify.ts';
 
 Deno.serve(async req => {

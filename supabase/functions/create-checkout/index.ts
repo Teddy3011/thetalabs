@@ -1,6 +1,6 @@
 // POST { cart_id } with the customer's login → { url } of a Stripe Checkout page for that cart's confirmed prices.
 // Deploy: supabase functions deploy create-checkout   Secrets: STRIPE_SECRET_KEY, SITE_URL (README, "Payments").
-import { createClient } from 'npm:@supabase/supabase-js@2.45.4';
+import { createClient } from 'npm:@supabase/supabase-js@2.119.0';
 
 const cors = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
 const json = (body: unknown, status = 200) =>
