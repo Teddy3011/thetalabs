@@ -1,1 +1,1 @@
-{"private": true, "type": "module", "scripts": {"test": "node tests/stl.test.mjs && node tests/avatar.test.mjs && node tests/bill.test.mjs && node tests/webhook.test.mjs"}}
+{"private": true, "type": "module", "scripts": {"test": "node tests/stl.test.mjs && node tests/avatar.test.mjs && node tests/bill.test.mjs && node tests/webhook.test.mjs && node tests/whatsapp.test.mjs"}}

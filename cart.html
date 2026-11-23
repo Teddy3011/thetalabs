@@ -61,6 +61,15 @@
             <li>On your order page, pay by card or choose pay on pickup. Then your bill prints and printing starts.</li>
           </ol>
           <div id="who"></div>
+          <fieldset class="wa">
+            <legend class="sr-only">WhatsApp updates</legend>
+            <label class="wa-opt"><input type="checkbox" id="wa-on"> <span>Send me order updates on WhatsApp</span></label>
+            <div class="wa-number" id="wa-number" hidden>
+              <select id="wa-cc" aria-label="Country code"><option value="1">+1 US</option><option value="91">+91 India</option></select>
+              <input id="wa-phone" type="tel" inputmode="tel" autocomplete="tel-national" maxlength="20" placeholder="WhatsApp number" aria-label="WhatsApp number">
+            </div>
+            <p class="small" id="wa-note" hidden>We message you when your price is ready, when printing starts and when each part is ready. Only Theta Labs 3D sees this number, never the printer owner. Sent through Meta's WhatsApp.</p>
+          </fieldset>
           <div class="cta-row"><button class="btn press" type="button" id="place">Place order · no charge</button></div>
         </div>
         <div id="steps-email" hidden>
@@ -105,6 +114,7 @@ async function render() {
   const cur = items[0].currency, lo = items.reduce((t, i) => t + i.lo, 0), hi = items.reduce((t, i) => t + i.hi, 0);
   $('#n-items').textContent = items.length;
   $('#sum').textContent = range(Math.round(lo * 100) / 100, Math.round(hi * 100) / 100, cur);
+  $('#wa-cc').value = cur === 'INR' ? '91' : '1';
 }
 $('#items').addEventListener('click', async e => {
   const b = e.target.closest('[data-remove]');
@@ -130,8 +140,19 @@ async function who() {
   });
 }
 
+// WhatsApp opt-in: country code from the cart's currency; the number is checked before anything is uploaded.
+$('#wa-on').addEventListener('change', e => { $('#wa-number').hidden = $('#wa-note').hidden = !e.target.checked; if (e.target.checked) $('#wa-phone').focus(); });
+const whatsapp = () => {
+  if (!$('#wa-on').checked) return null;
+  const digits = $('#wa-phone').value.replace(/\D/g, '').replace(/^0+/, '');
+  const full = '+' + $('#wa-cc').value + digits;
+  return /^\+[1-9][0-9]{7,14}$/.test(full) ? full : false;
+};
+
 $('#place').addEventListener('click', async () => {
   if (!user || !items.length) return;
+  const wa = whatsapp();
+  if (wa === false) { msg($('#msg'), 'That WhatsApp number doesn\'t look right. Type it without the country code, for example 480 555 0123.', true); return $('#wa-phone').focus(); }
   const btn = $('#place'), cartId = crypto.randomUUID();
   btn.disabled = true;
   for (const [i, it] of items.entries()) {
@@ -148,6 +169,10 @@ $('#place').addEventListener('click', async () => {
       return render();
     }
     await cart.remove(it.id);
+  }
+  if (wa) {  // the order went through either way; only the updates depend on this
+    const { error } = await sb.from('order_contacts').insert({ cart_id: cartId, whatsapp: wa });
+    if (error) console.warn('WhatsApp opt-in not saved:', error.message);
   }
   location.href = 'bill.html?cart=' + cartId;
 });

@@ -35,7 +35,9 @@ supabase/schema.sql      tables, RLS, job functions, storage bucket — run once
 supabase/002_*.sql       later changes (materials, colors) — run after schema.sql, in order
 supabase/003_*.sql       guest accounts: guests are always customers, at most 10 parts in progress, email sync
 supabase/004_*.sql       cart + payment: quote → priced → open, set_final_price, pay_on_pickup, mark_cart_paid
-supabase/functions/      create-checkout (opens Stripe Checkout) and stripe-webhook (marks a cart paid)
+supabase/functions/      create-checkout (opens Stripe Checkout), stripe-webhook (marks a cart paid), whatsapp-notify
+supabase/005_*.sql       WhatsApp opt-in numbers (customer + admin only) and a sent-once log
+my-printer.html          live screen for whoever runs the printer: current job, estimated time left, big buttons, queue
 cart.html, bill.html     cart (files kept in the browser until checkout) and the order page: bill, payment, live status
 assets/cart.js           the cart (IndexedDB)   assets/bill.js  order stage + receipt lines (tested by npm test)
 assets/avatar.js         a guest's face (DiceBear "Lorelei", CC0, loaded from api.dicebear.com) and name ("Orange Gear 47"), from the account id
@@ -76,7 +78,29 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
    `supabase secrets set STRIPE_WEBHOOK_SECRET=whsec_...`. Finally set `CARD_PAYMENTS = true` in `assets/config.js`.
    Use Stripe's test keys first (card 4242 4242 4242 4242), then swap to live keys. Keys only ever go into
    `supabase secrets`, never into the site's files.
-10. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
+10. **WhatsApp updates (optional, automatic):** customers who tick "Send me order updates on WhatsApp" at
+    checkout get a message when their price is ready, when printing starts and when each part is ready. Only the
+    admin can read the numbers; printer owners never see them.
+    1. Run `supabase/005_whatsapp.sql`.
+    2. In Meta (developers.facebook.com → My Apps → Create app → Business → add **WhatsApp**), connect a phone number
+       for the business, and create a **System User** access token with `whatsapp_business_messaging` permission.
+       Note the **Phone number ID** (WhatsApp → API Setup).
+    3. In WhatsApp Manager → Message templates, create three **Utility** templates in English (US), each with a
+       **URL button** "View order" pointing to `https://thetalab3d.shop/bill.html?cart={{1}}`:
+       - `order_priced`: "Your Theta Labs 3D order {{1}} has its final price: {{2}}. Open your order to pay by card or choose pay on pickup."
+       - `order_printing`: "Your Theta Labs 3D order {{1}} is printing now. We'll message you again when it's ready."
+       - `order_ready`: "Your part {{1}} is ready for {{2}}. Open your order for the details."
+       Wait for Meta to approve them (usually within a day).
+    4. Deploy and add secrets (make up a long random WEBHOOK_SECRET):
+       ```bash
+       supabase functions deploy whatsapp-notify --no-verify-jwt
+       supabase secrets set WHATSAPP_TOKEN=... WHATSAPP_PHONE_NUMBER_ID=... WEBHOOK_SECRET=...
+       ```
+    5. Supabase → Database → Webhooks → Create: table `orders`, event **Update**, type **Supabase Edge Functions**,
+       function `whatsapp-notify`, and an HTTP header `x-webhook-secret` with the same WEBHOOK_SECRET.
+    Meta charges per message (utility templates cost a few cents). Until this is set up, opted-in numbers are simply
+    stored and nothing is sent.
+11. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
    accept it as the printer.
 
 Notes: the free plan caps uploads at 50 MB per file, so the bucket limit is 50 MB (60 MB needs the Pro plan; see the

@@ -32,6 +32,14 @@
 .checkout .next-list { margin-block: var(--space-2); }
 .checkout .cta-row { margin-block: var(--space-2) 0; }
 .who-line { display: flex; align-items: center; gap: 0.6rem; }
+/* WhatsApp opt-in */
+.wa { margin: var(--space-2) 0 0; padding: 0; border: 0; }
+.wa-opt { display: flex; align-items: center; gap: 0.6rem; min-height: 44px; cursor: pointer; }
+.wa-opt input { width: 1.2rem; height: 1.2rem; accent-color: var(--accent); }
+.wa-number { display: grid; grid-template-columns: 7.5rem 1fr; gap: 0.5rem; margin-top: 0.4rem; }
+.wa-number :is(select, input) { min-height: 48px; padding: 0.6rem 0.75rem; border: 2px solid var(--field-line); border-radius: var(--radius); background: var(--surface-2); color: var(--fg); font: var(--step-0) var(--font-sans); }
+.wa-number :is(select, input):focus-visible { border-color: var(--accent); outline: 2px solid var(--accent); outline-offset: 0; }
+.wa .small { margin-top: 0.5rem; }
 /* reuses the estimate page's numbered list */
 .next-list { display: grid; gap: 0.6rem; padding: 0; list-style: none; counter-reset: next; }
 .next-list li { counter-increment: next; position: relative; padding-left: 2.25rem; color: var(--muted); }
