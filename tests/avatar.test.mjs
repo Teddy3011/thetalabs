@@ -9,16 +9,16 @@ assert.equal(identity(ids[7]).name, all[7].name);
 assert.equal(identity(ids[7]).img(), all[7].img());
 
 for (const [i, a] of all.entries()) {
-  assert.match(a.name, /^[A-Z][a-z]+-\d{1,3}$/);
-  assert.ok(a.z >= 1 && a.z <= 118 && a.mass >= a.z, 'isotope numbers make chemical sense');
+  assert.match(a.name, /^(Lime|Bone|Orange|Sky) (Gear|Bracket|Hinge|Spool|Nozzle|Layer|Vase|Clip|Knob|Mount|Tag|Bolt) [1-9]\d$/);
+  assert.ok(a.img().includes('backgroundColor=' + { Lime: 'c8ff00', Bone: 'efeadd', Orange: 'ff5a1f', Sky: '8ecbe0' }[a.name.split(' ')[0]]), 'the colour word matches the background');
   const tag = a.img(40), src = tag.match(/src="([^"]+)"/)[1];
   assert.ok(src.startsWith('https://api.dicebear.com/9.x/lorelei/svg?seed='));
   assert.ok(!src.includes(ids[i]) && !src.includes(ids[i].replace(/-/g, '')), 'the account id is never sent');
-  assert.match(tag, /alt="[A-Za-z]+-\d+"/);
+  assert.match(tag, /alt="[A-Za-z]+ [A-Za-z]+ \d\d"/);
 }
 
-// ~350 realistic names repeat among many guests; faces (seed × background) rarely do
-assert.ok(new Set(all.map(a => a.name)).size > 200, 'names vary');
+// 4 × 12 × 90 = 4,320 names, so some repeat among many guests; faces (seed × background) almost never do
+assert.ok(new Set(all.map(a => a.name)).size > 450, 'names vary');
 assert.ok(new Set(all.map(a => a.img())).size === all.length, 'faces vary');
 assert.ok(all.every(a => !/[<>"&]/.test(a.name)));
 console.log('avatar tests passed');
