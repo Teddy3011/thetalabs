@@ -222,9 +222,10 @@ html:not(.motion) .slab { transition: none !important; }
 .site-header .region-pill + .header-cta { margin-left: 0.5rem; }
 .map-open { overflow: hidden; }
 .map-dialog {
-  position: fixed; inset: 0; z-index: 100; overflow-y: auto; display: grid; align-items: center;
-  padding-block: var(--space-4); background: var(--bg);
+  position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; margin: 0; border: 0;
+  overflow-y: auto; align-items: center; padding: var(--space-4) 0; background: var(--bg); color: inherit;
 }
+.map-dialog[open] { display: grid; }
 .map-inner { display: grid; justify-items: center; text-align: center; }
 .map-inner .kicker { justify-content: center; }
 .map-inner h2 { font-size: clamp(2.6rem, 1rem + 6vw, 5.5rem); line-height: 0.95; letter-spacing: -0.03em; }

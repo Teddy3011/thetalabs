@@ -90,7 +90,7 @@ import { stage, total, slip, slipHtml, money } from './assets/bill.js';
 import { count } from './assets/cart.js';
 
 count();
-const params = new URLSearchParams(location.search), cartId = params.get('cart') || '';
+const params = new URLSearchParams(location.search), cartId = params.get('cart') || '', ref = cartId.slice(0, 8).toUpperCase();
 const fromStripe = params.has('paid');
 const COPY = {
   checking: ['We\'re checking your files.', 'We look at every part and set its final price. Nothing is charged yet. This page updates as soon as it\'s priced.'],
@@ -103,7 +103,7 @@ let printer = null, lastStage = null, guest = false, contact = false, confirmWai
 function draw(orders) {
   const st = stage(orders), live = orders.filter(o => o.status !== 'cancelled'), cur = live[0]?.currency || orders[0].currency;
   const pickup = live.length && live.every(o => o.payment === 'pickup');
-  $('#ref').textContent = `Order ${cartId.slice(0, 8).toUpperCase()}`;
+  $('#ref').textContent = `Order ${ref}`;
   $('#title').textContent = COPY[st][0];
   $('#lead').textContent = st === 'paid'
     ? (pickup ? `You pay ${money(total(orders), cur)} when you pick up. Your parts are in the print queue.` : 'Paid by card. Your parts are in the print queue.')
@@ -112,10 +112,10 @@ function draw(orders) {
   // Back from Stripe: wait for our records, and say so plainly if it's slow, so nobody pays twice.
   if (fromStripe && st === 'priced') msg($('#msg'), confirmWait < 60
     ? 'Stripe has your payment. Confirming it here, which usually takes a few seconds…'
-    : `Your payment is taking longer than usual to confirm. Please don't pay again. If this page hasn't updated in a few minutes, email info@thetalab3d.shop with order ${cartId.slice(0, 8).toUpperCase()}.`);
+    : `Your payment is taking longer than usual to confirm. Please don't pay again. If this page hasn't updated in a few minutes, email info@thetalab3d.shop with order ${ref}.`);
   else if (fromStripe && st === 'paid') msg($('#msg'), '');
   const issue = live.find(o => o.payment_issue);
-  if (issue) msg($('#msg'), 'We received your card payment, but something didn\'t match our records (for example the price changed while you were paying). You won\'t be asked to pay again; we\'re checking it.' + (contact ? '' : ` If you have questions, email info@thetalab3d.shop with order ${cartId.slice(0, 8).toUpperCase()}.`));
+  if (issue) msg($('#msg'), 'We received your card payment, but something didn\'t match our records (for example the price changed while you were paying). You won\'t be asked to pay again; we\'re checking it.' + (contact ? '' : ` If you have questions, email info@thetalab3d.shop with order ${ref}.`));
 
   $('#bill').hidden = false;
   $('#bill').dataset.stage = st;

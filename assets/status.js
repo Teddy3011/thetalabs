@@ -9,12 +9,10 @@
 export const STEPS = ['Checking file', 'Price ready', 'Booked', 'Printing', 'Ready', 'Picked up'];
 const AT = { quote: 0, priced: 1, open: 2, accepted: 2, printing: 3, ready: 4, completed: 5 };
 
-const handover = o => o.fulfillment === 'delivery' ? 'delivery' : 'pickup';
-
 // o: an order row. contact: does the customer have a way for us to reach them (email, or WhatsApp turned on)?
 export function customerStatus(o, { contact = true } = {}) {
   if (o.status === 'cancelled') return { label: 'Cancelled', step: -1, steps: STEPS, next: 'Email info@thetalab3d.shop with your order number if you have questions.' };
-  const step = AT[o.status] ?? 0, delivery = handover(o) === 'delivery';
+  const step = AT[o.status] ?? 0, delivery = o.fulfillment === 'delivery';
   const steps = delivery ? [...STEPS.slice(0, 5), 'Delivered'] : STEPS;
   const pay = o.payment === 'pickup' ? 'You pay at pickup.' : o.payment === 'card' && o.paid_at ? 'Paid by card.' : '';
   const reach = contact ? 'We\'ll contact you' : 'Email info@thetalab3d.shop with your order number';
@@ -26,6 +24,6 @@ export function customerStatus(o, { contact = true } = {}) {
     delivery ? `Ready. ${reach} to arrange delivery.` : `Ready for pickup near ASU's Tempe campus. ${reach} to arrange a time.`,
     delivery ? 'Delivered.' : 'Picked up.',
   ][step];
-  const label = step === 4 ? `Ready for ${handover(o)}` : steps[step];
+  const label = step === 4 ? (delivery ? 'Ready for delivery' : 'Ready for pickup') : steps[step];
   return { label, step, steps, next };
 }

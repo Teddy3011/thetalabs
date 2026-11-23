@@ -21,15 +21,12 @@ export async function openPicker(force = false) {
   setPill(guess.region);
   if (!force && (chosen || store(SEEN))) return;
   const svg = await fetch('assets/world-map.svg').then(r => r.ok ? r.text() : '').catch(() => '');
-  const before = document.activeElement;
-  const el = document.createElement('div');
+  const el = document.createElement('dialog');
   el.className = 'map-dialog';
-  el.setAttribute('role', 'dialog');
-  el.setAttribute('aria-modal', 'true');
   el.setAttribute('aria-labelledby', 'map-title');
   const choice = (r, title, where, note) => `<button class="map-choice" type="button" data-region="${r}">
       <strong>${title}</strong><span>${where}</span><small>${note}</small>
-      ${guess.region === r && guess.how !== 'choice' ? '<em>Suggested from your location</em>' : ''}${guess.how === 'choice' && guess.region === r ? '<em>Your current choice</em>' : ''}</button>`;
+      ${guess.region === r ? `<em>${guess.how === 'choice' ? 'Your current choice' : 'Suggested from your location'}</em>` : ''}</button>`;
   el.innerHTML = `<div class="map-inner wrap">
     <p class="kicker">Theta Labs 3D</p>
     <h2 id="map-title">Where are you?</h2>
@@ -44,22 +41,25 @@ export async function openPicker(force = false) {
     </div>
     <button class="map-skip" type="button">Skip for now</button>
   </div>`;
+  // a modal <dialog> keeps focus inside, sends Escape as "cancel" and returns focus when it closes
   document.body.append(el);
+  el.showModal();
   document.documentElement.classList.add('map-open');
   const stage = el.querySelector('.map-stage');
-  const buttons = [...el.querySelectorAll('.map-choice, .map-skip')];
-  (el.querySelector(`.map-choice[data-region="${guess.region}"]`) || buttons[0]).focus();
+  el.querySelector(`.map-choice[data-region="${guess.region}"]`)?.focus();
 
   const close = region => {
     store(SEEN, '1');
     if (region) { remember(region); setPill(region); window.dispatchEvent(new CustomEvent('theta-region', { detail: region })); }
     el.classList.add('is-closing');
     document.documentElement.classList.remove('map-open');
-    const back = before?.isConnected && before !== document.body ? before : document.getElementById('region-pill');
-    const done = () => { el.remove(); back?.focus?.({ preventScroll: true }); };
+    const done = () => {
+      el.close(); el.remove();
+      if (document.activeElement === document.body) document.getElementById('region-pill')?.focus({ preventScroll: true });
+    };
     document.documentElement.classList.contains('motion') ? setTimeout(done, 350) : done();
-    removeEventListener('keydown', onKey);
   };
+  el.addEventListener('cancel', e => { e.preventDefault(); close(); });
   el.addEventListener('click', e => {
     const b = e.target.closest('[data-region], .map-skip');
     if (b) close(b.dataset.region);
@@ -68,14 +68,6 @@ export async function openPicker(force = false) {
   const hover = e => { const b = e.target.closest('[data-region]'); stage.dataset.hover = b ? b.dataset.region : ''; };
   el.addEventListener('pointerover', hover);
   el.addEventListener('focusin', hover);
-  const onKey = e => {
-    if (e.key === 'Escape') return close();
-    if (e.key !== 'Tab') return;
-    const i = buttons.indexOf(document.activeElement);  // keep Tab inside the dialog
-    if (e.shiftKey && i <= 0) { e.preventDefault(); buttons.at(-1).focus(); }
-    else if (!e.shiftKey && i === buttons.length - 1) { e.preventDefault(); buttons[0].focus(); }
-  };
-  addEventListener('keydown', onKey);
 }
 
 document.getElementById('region-pill')?.addEventListener('click', () => openPicker(true));
