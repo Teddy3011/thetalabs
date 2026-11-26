@@ -42,6 +42,40 @@
     <div id="gate"></div>
     <p class="msg" id="msg" role="status"></p>
 
+    <section class="rig" id="rig" aria-labelledby="rig-title" hidden>
+      <div class="rig-head">
+        <h2 id="rig-title">Your printer</h2>
+        <fieldset class="rig-status">
+          <legend class="sr-only">Taking new work?</legend>
+          <label><input type="radio" name="rig-status" value="available"> <span>Available</span></label>
+          <label><input type="radio" name="rig-status" value="busy"> <span>Busy</span></label>
+          <label><input type="radio" name="rig-status" value="off"> <span>Off</span></label>
+        </fieldset>
+      </div>
+      <p class="small" id="rig-summary"></p>
+      <form class="spools" id="spools">
+        <h3>Filament left</h3>
+        <ul class="spool-list" id="spool-list"></ul>
+        <div class="spool-actions">
+          <button class="btn btn-sm btn-ghost" type="button" id="spool-add">Add spool</button>
+          <button class="btn btn-sm press" type="submit">Save filament</button>
+        </div>
+      </form>
+      <details class="rig-edit">
+        <summary>Edit details</summary>
+        <form class="form rig-form" id="rig-form">
+          <label>Printer name <input name="display_name" required maxlength="40" placeholder="Ratan's printer"></label>
+          <label>Machine <input name="machine" maxlength="80" placeholder="Bambu Lab A1"></label>
+          <label>Biggest part side (mm) <input name="max_size_mm" type="number" min="20" max="1000" placeholder="256"></label>
+          <label>Usually ready in (days) <input name="lead_days" type="number" min="1" max="30" required></label>
+          <label>City <input name="city" maxlength="60" autocomplete="address-level2"></label>
+          <label>ZIP <input name="zip" maxlength="10" autocomplete="postal-code"></label>
+          <label class="rig-wide">Pickup area and times <textarea name="pickup_note" maxlength="200" rows="2" placeholder="Near ASU, weekdays after 5 pm"></textarea></label>
+          <button class="btn press" type="submit">Save details</button>
+        </form>
+      </details>
+    </section>
+
     <div class="station-grid" id="station" hidden>
       <section class="station-now" aria-labelledby="now-title">
         <figure class="printer live" id="art" aria-hidden="true" data-state="idle">
@@ -72,6 +106,19 @@
           <h2 id="queue-title">Up next</h2>
           <ul class="queue" id="queue"></ul>
         </section>
+        <section aria-labelledby="update-title" id="update-box" hidden>
+          <h2 id="update-title">Update a customer</h2>
+          <form class="form job-update" id="update-form">
+            <label>Part <select name="job" id="update-job"></select></label>
+            <label>Ready by <input name="ready" type="date"></label>
+            <label>Note to the customer <textarea name="note" maxlength="280" rows="2" placeholder="Printing tonight, ready tomorrow after 5 pm"></textarea></label>
+            <button class="btn btn-sm press" type="submit">Send update</button>
+            <p class="small">Shows on the customer's order page right away.</p>
+          </form>
+          <h3 class="photos-title">Progress photos</h3>
+          <div class="photo-slots" id="photo-slots"></div>
+          <p class="small">Take them with your phone: first layer, halfway, finished. The customer sees them on their order page.</p>
+        </section>
         <p class="small" id="open-count"></p>
         <p class="small">Time left is an estimate from the part's weight, at about 12 g an hour. Your printer's real time depends on its settings.</p>
       </aside>
@@ -81,6 +128,7 @@
 
 <script type="module">
 import { sb, $, esc, msg, materialText, colorText, requireConfig, requireUser, getProfile } from './assets/app.js';
+import { COLORS } from './assets/stl.js';
 
 const GRAMS_PER_HOUR = 12;  // ponytail: rough PLA rate for a Bambu A1; store real print times if estimates matter
 const NEXT = { accepted: ['printing', 'Start print'], printing: ['ready', 'Mark ready'], ready: ['completed', 'Mark picked up'] };
@@ -123,7 +171,132 @@ function draw() {
   $('#ready-box').hidden = !ready.length;
   $('#ready').innerHTML = ready.map(o => `<li><strong>${esc(o.filename)}</strong><span>${o.fulfillment === 'delivery' ? 'Deliver to' : 'Pickup'} · ${esc(o.city)} ${esc(o.zip || '')}</span>
       <button class="btn btn-sm press" type="button" data-job="${o.id}" data-to="completed">${o.fulfillment === 'delivery' ? 'Mark delivered' : 'Mark picked up'}</button></li>`).join('');
+  // the update form isn't redrawn (that would wipe what's being typed); only its list of parts is refreshed
+  const pick = $('#update-job'), was = pick.value;
+  pick.innerHTML = jobs.map(o => `<option value="${o.id}">${esc(o.filename)} · ${o.status}</option>`).join('');
+  if (jobs.some(o => o.id === was)) { pick.value = was; drawPhotos(jobs.find(o => o.id === was)); } else fillUpdate();
+  $('#update-box').hidden = !jobs.length;
   $('#open-count').innerHTML = openCount ? `<a href="printers.html">${openCount} open job${openCount > 1 ? 's' : ''} on the job board →</a>` : 'No open jobs on the job board right now.';
+}
+
+const today = () => new Date().toLocaleDateString('en-CA');  // YYYY-MM-DD in local time
+function fillUpdate() {
+  const o = jobs.find(j => j.id === $('#update-job').value), f = $('#update-form');
+  f.ready.min = today();
+  f.ready.value = o?.ready_by || '';
+  f.note.value = o?.printer_note || '';
+  drawPhotos(o);
+}
+
+// Progress photos: three fixed slots per part, stored at job-photos/<order id>/<stage>.jpg
+const STAGES = [['start', 'First layer'], ['middle', 'Halfway'], ['done', 'Finished']];
+const photoUrls = new Map();  // path → signed link, so redraws don't reload images
+async function photoUrl(path, fresh) {
+  if (fresh || !photoUrls.has(path)) {
+    const { data } = await sb.storage.from('job-photos').createSignedUrl(path, 3600);
+    photoUrls.set(path, data?.signedUrl ? data.signedUrl + (fresh ? '&v=' + Date.now() : '') : '');
+  }
+  return photoUrls.get(path);
+}
+async function drawPhotos(o) {
+  const box = $('#photo-slots'), key = o ? `${o.id}:${o.photos}` : '';
+  // the screen redraws every 30 s; rebuilding the file inputs then would lose a photo being taken
+  if (box.dataset.key === key) return;
+  box.dataset.key = key;
+  if (!o) return box.innerHTML = '';
+  box.innerHTML = STAGES.map(([k, label]) => `<label class="photo-slot" data-stage="${k}">
+      <span class="photo-img"></span><span class="photo-label">${label}</span>
+      <input type="file" accept="image/*" capture="environment" data-photo="${k}" class="sr-only">
+      <span class="btn btn-sm btn-ghost">${o.photos?.includes(k) ? 'Retake' : 'Add photo'}</span></label>`).join('');
+  for (const k of o.photos || []) {
+    const url = await photoUrl(`${o.id}/${k}.jpg`);
+    const img = box.querySelector(`[data-stage="${k}"] .photo-img`);
+    if (url && img) img.innerHTML = `<img src="${esc(url)}" alt="">`;
+  }
+}
+// phone photos are several MB: shrink to 1600 px JPEG before upload
+async function shrink(file) {
+  const bmp = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
+  const c = Object.assign(document.createElement('canvas'), { width: Math.round(bmp.width * k), height: Math.round(bmp.height * k) });
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return new Promise(r => c.toBlob(r, 'image/jpeg', 0.82));
+}
+$('#update-job').addEventListener('change', fillUpdate);
+
+// Your printer: Available / Busy / Off saves at once; the rest saves with the form.
+const STATUS_TEXT = { available: 'Available for new jobs', busy: 'Busy: finishing current jobs', off: 'Off: not taking jobs' };
+let rig = null;
+function showRig(me) {
+  document.querySelector(`input[name="rig-status"][value="${rig.status}"]`).checked = true;
+  const mats = [...new Set(rig.spools.filter(x => x.grams > 0).map(x => x.material.toUpperCase()))].join(', ');
+  $('#rig-summary').textContent = [STATUS_TEXT[rig.status], rig.machine, mats, `usually ready in ${rig.lead_days} day${rig.lead_days > 1 ? 's' : ''}`,
+    [me.city, me.zip].filter(Boolean).join(' ')].filter(Boolean).join(' · ');
+}
+async function setupRig(user, me) {
+  const [{ data, error }, { data: mats }] = await Promise.all([
+    sb.from('printer_profiles').select('*').eq('user_id', user.id).maybeSingle(),
+    sb.from('materials').select('id, name').eq('active', true).order('sort'),
+  ]);
+  if (error) return msg($('#msg'), `Your printer details didn't load: ${error.message}`, true);
+  rig = data || { user_id: user.id, display_name: 'My printer', status: 'available', machine: '', max_size_mm: null, spools: [], lead_days: 2, pickup_note: '' };
+  const f = $('#rig-form');
+  const matOpts = (mats || []).map(m => [m.id, m.name.split(' (')[0]]);
+  const spoolRow = (x = { material: matOpts[0]?.[0] || 'pla', color: 'Black', grams: 1000 }) => `<li class="${x.grams < 100 ? 'low' : ''}">
+      <i class="dot" style="background:${COLORS[x.color] || '#888'}"></i>
+      <select name="material" aria-label="Material">${matOpts.map(([id, n]) => `<option value="${esc(id)}"${id === x.material ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+      <select name="color" aria-label="Color">${Object.keys(COLORS).map(c => `<option${c === x.color ? ' selected' : ''}>${c}</option>`).join('')}</select>
+      <label class="grams"><input name="grams" type="number" min="0" max="10000" step="10" value="${+x.grams || 0}" aria-label="Grams left"> g left</label>
+      <button class="spool-remove" type="button" aria-label="Remove spool">×</button></li>`;
+  const drawSpools = () => {
+    $('#spool-list').innerHTML = rig.spools.map(spoolRow).join('') || '<li class="queue-empty">No spools yet. Add what you have loaded or on the shelf.</li>';
+  };
+  drawSpools();
+  $('#spool-add').addEventListener('click', () => {
+    $('#spool-list').querySelector('.queue-empty')?.remove();
+    $('#spool-list').insertAdjacentHTML('beforeend', spoolRow());
+  });
+  $('#spool-list').addEventListener('click', e => e.target.closest('.spool-remove')?.closest('li').remove());
+  $('#spool-list').addEventListener('change', e => {  // keep the colour dot and low warning in step with the inputs
+    const li = e.target.closest('li');
+    if (!li) return;
+    li.querySelector('.dot').style.background = COLORS[li.querySelector('[name=color]').value];
+    li.classList.toggle('low', +li.querySelector('[name=grams]').value < 100);
+  });
+  $('#spools').addEventListener('submit', async e => {
+    e.preventDefault();
+    const spools = [...$('#spool-list').querySelectorAll('li:not(.queue-empty)')].map(li => ({
+      material: li.querySelector('[name=material]').value, color: li.querySelector('[name=color]').value,
+      grams: Math.max(0, Math.round(+li.querySelector('[name=grams]').value || 0)) }));
+    if (await save({ spools })) { drawSpools(); msg($('#msg'), 'Filament saved.'); }
+  });
+  for (const k of ['display_name', 'machine', 'max_size_mm', 'lead_days', 'pickup_note']) f[k].value = rig[k] ?? '';
+  f.city.value = me.city || ''; f.zip.value = me.zip || '';
+  showRig(me);
+  $('#rig').hidden = false;
+
+  const save = async changes => {
+    const { updated_at, ...row } = { ...rig, ...changes };
+    const { data, error } = await sb.from('printer_profiles').upsert(row).select().single();
+    if (error) { msg($('#msg'), `Not saved: ${error.message}`, true); return false; }
+    rig = data; showRig(me); return true;
+  };
+  document.querySelectorAll('input[name="rig-status"]').forEach(r => r.addEventListener('change', async () => {
+    if (await save({ status: r.value })) msg($('#msg'), STATUS_TEXT[r.value] + '.');
+    else showRig(me);  // put the radio back
+  }));
+  f.addEventListener('submit', async e => {
+    e.preventDefault();
+    const b = f.querySelector('button[type="submit"]'); b.disabled = true;
+    const place = { city: f.city.value.trim(), zip: f.zip.value.trim() };
+    const { error } = await sb.from('profiles').update(place).eq('id', user.id);
+    if (error) msg($('#msg'), `Area not saved: ${error.message}`, true);
+    else Object.assign(me, place);
+    const ok = await save({ display_name: f.display_name.value.trim(), machine: f.machine.value.trim(), max_size_mm: f.max_size_mm.value ? +f.max_size_mm.value : null,
+      lead_days: +f.lead_days.value, pickup_note: f.pickup_note.value.trim() });
+    b.disabled = false;
+    if (ok && !error) { msg($('#msg'), 'Printer details saved.'); f.closest('details').open = false; }
+  });
 }
 
 if (requireConfig($('#gate'))) {
@@ -137,6 +310,7 @@ if (requireConfig($('#gate'))) {
   if (user && !allowed) msg($('#msg'), 'This screen is for approved printer owners. See the job board for how to apply.', true);
   else if (user) {
     $('#station').hidden = false;
+    setupRig(user, profile);
     const load = async () => {
       const { data, error } = await sb.from('orders').select('*').eq('printer_id', user.id).in('status', ['accepted', 'printing', 'ready']).order('accepted_at');
       if (error) return msg($('#msg'), error.message, true);
@@ -147,6 +321,34 @@ if (requireConfig($('#gate'))) {
     await load();
     sb.channel('my-printer').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, load).subscribe();
     setInterval(draw, 30000);  // time left and progress move on their own
+
+    $('#photo-slots').addEventListener('change', async e => {
+      const input = e.target.closest('input[data-photo]'), file = input?.files[0];
+      if (!file) return;
+      const id = $('#update-job').value, stage = input.dataset.photo, path = `${id}/${stage}.jpg`;
+      const slot = input.closest('.photo-slot'); slot.classList.add('busy');
+      msg($('#msg'), 'Uploading photo…');
+      try {
+        const up = await sb.storage.from('job-photos').upload(path, await shrink(file), { contentType: 'image/jpeg', upsert: true });
+        if (up.error) throw up.error;
+        const { error } = await sb.rpc('add_job_photo', { order_id: id, stage });
+        if (error) throw error;
+        await photoUrl(path, true);  // new picture, new link
+        $('#photo-slots').dataset.key = '';  // redraw even when it was a retake
+        msg($('#msg'), 'Photo added. The customer can see it now.');
+        await load();
+      } catch (err) { msg($('#msg'), `Photo not saved: ${err.message || err}`, true); }
+      slot.classList.remove('busy');
+    });
+
+    $('#update-form').addEventListener('submit', async e => {
+      e.preventDefault();
+      const f = e.target, b = f.querySelector('button'); b.disabled = true;
+      const { error } = await sb.rpc('set_job_update', { order_id: f.job.value, ready: f.ready.value || null, note: f.note.value });
+      b.disabled = false;
+      msg($('#msg'), error ? `Update not sent: ${error.message}` : 'Update sent. The customer sees it on their order page.', !!error);
+      if (!error) await load();
+    });
 
     document.addEventListener('click', async e => {
       const b = e.target.closest('button[data-job], button[data-download]');

@@ -74,3 +74,9 @@
 .track li.now { border-color: var(--accent); color: var(--accent); }
 html.motion .track li.now { animation: now 1.2s ease-in-out infinite; }
 @keyframes now { 50% { border-color: rgb(200 255 0 / 0.35); } }
+.part-update { margin-top: 0.6rem; padding: 0.6rem 0.8rem; border-left: 3px solid var(--accent, #c8ff00); background: rgba(200, 255, 0, 0.06); font-size: var(--step--1); overflow-wrap: anywhere; }
+.part-photos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; margin-top: 0.6rem; }
+.part-photos figure { margin: 0; }
+.part-photos span { display: block; aspect-ratio: 1; border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.part-photos img { width: 100%; height: 100%; object-fit: cover; }
+.part-photos figcaption { margin-top: 0.25rem; font: 0.72rem var(--font-mono); color: var(--muted); }

@@ -71,3 +71,49 @@ html.motion .live[data-state="printing"] .p-glow { animation: glow 0.7s ease-in-
 .queue li .btn { grid-row: 1 / span 2; grid-column: 2; }
 .queue li .btn-ghost { color: var(--ink); border-color: var(--ink); }
 .queue .queue-empty { display: block; padding: 0.8rem 1rem; border: 1px dashed var(--line); background: none; color: var(--muted); }
+
+/* ---------- my-printer.html: Your printer panel and customer updates ---------- */
+.rig { margin-bottom: var(--space-4); padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.rig-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.rig-head h2 { font-size: var(--step-2); }
+.rig-status { display: flex; gap: 0.4rem; margin: 0; padding: 0; border: 0; }
+.rig-status label { position: relative; }
+.rig-status input { position: absolute; opacity: 0; }
+.rig-status span { display: block; padding: 0.45rem 0.9rem; border: 1px solid var(--line); border-radius: 999px; font: 0.8rem var(--font-mono); cursor: pointer; }
+.rig-status input:checked + span { background: var(--accent, #c8ff00); border-color: transparent; color: #000; }
+.rig-status input[value="busy"]:checked + span { background: #ff5a1f; }
+.rig-status input[value="off"]:checked + span { background: var(--muted); }
+.rig-status input:focus-visible + span { outline: 2px solid var(--fg); outline-offset: 2px; }
+#rig-summary { margin-top: 0.5rem; }
+.rig-edit { margin-top: 0.75rem; }
+.rig-edit summary { cursor: pointer; font: 0.85rem var(--font-mono); }
+.rig-form { display: grid; gap: 0.9rem; margin-top: 1rem; }
+@media (min-width: 700px) { .rig-form { grid-template-columns: 1fr 1fr; } .rig-form fieldset, .rig-wide, .rig-form .btn { grid-column: 1 / -1; } .rig-form .btn { justify-self: start; } }
+.rig-form fieldset { margin: 0; padding: 0; border: 0; }
+.rig-form legend { margin-bottom: 0.4rem; }
+.rig-checks { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; }
+.rig-checks label { display: inline-flex; align-items: center; gap: 0.35rem; font-size: var(--step--1); }
+.rig-checks input { width: auto; }
+.rig-checks i { width: 0.8rem; height: 0.8rem; border-radius: 50%; border: 1px solid var(--line); }
+.job-update { display: grid; gap: 0.6rem; }
+.job-update .btn { justify-self: start; }
+.spools { margin-top: 1rem; }
+.spools h3, .photos-title { font-size: var(--step-0); margin-bottom: 0.5rem; }
+.spool-list { display: grid; gap: 0.4rem; padding: 0; list-style: none; }
+.spool-list li:not(.queue-empty) { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding: 0.45rem 0.6rem; border: 1px solid var(--line); border-radius: 8px; }
+.spool-list li.low { border-color: #ff5a1f; }
+.spool-list li.low .grams::after { content: 'low'; margin-left: 0.4rem; color: #ff5a1f; font: 0.7rem var(--font-mono); text-transform: uppercase; }
+.spool-list select, .spool-list input { width: auto; min-width: 0; }
+.spool-list .grams { display: inline-flex; align-items: center; gap: 0.35rem; font-size: var(--step--1); }
+.spool-list .grams input { width: 5.5rem; }
+.spool-list .dot { width: 0.9rem; height: 0.9rem; border-radius: 50%; border: 1px solid var(--muted); flex: none; }
+.spool-remove { margin-left: auto; padding: 0.2rem 0.55rem; border: 0; background: none; color: var(--muted); font-size: 1.2rem; cursor: pointer; }
+.spool-actions { display: flex; gap: 0.5rem; margin-top: 0.6rem; }
+.photos-title { margin-top: var(--space-3); }
+.photo-slots { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.5rem; }
+.photo-slot { display: grid; gap: 0.35rem; justify-items: center; text-align: center; cursor: pointer; }
+.photo-slot.busy { opacity: 0.5; pointer-events: none; }
+.photo-img { display: block; width: 100%; aspect-ratio: 1; border: 1px dashed var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-2); }
+.photo-img img { width: 100%; height: 100%; object-fit: cover; }
+.photo-label { font: 0.72rem var(--font-mono); color: var(--muted); }
+.photo-slot:focus-within .btn { outline: 2px solid var(--fg); outline-offset: 2px; }

@@ -98,6 +98,20 @@ const COPY = {
   paid: ['Your bill.', ''],
   cancelled: ['This order was cancelled.', 'Email info@thetalab3d.shop with any questions.'],
 };
+// Progress photos from the printer: private, so each needs a signed link (kept, so live updates don't reload them).
+const photoLinks = new Map();
+async function showPhotos() {
+  for (const fig of document.querySelectorAll('[data-photo]')) {
+    const path = fig.dataset.photo;
+    if (!photoLinks.has(path)) {
+      const { data } = await sb.storage.from('job-photos').createSignedUrl(path, 3600);
+      photoLinks.set(path, data?.signedUrl || '');
+    }
+    const url = photoLinks.get(path);
+    if (url) fig.querySelector('span').innerHTML = `<a href="${esc(url)}" target="_blank" rel="noopener"><img src="${esc(url)}" alt="${esc(fig.textContent)} photo of your part" loading="lazy"></a>`;
+  }
+}
+
 let printer = null, lastStage = null, guest = false, contact = false, confirmWait = 0;
 
 function draw(orders) {
@@ -145,8 +159,11 @@ function draw(orders) {
       ${o.final_price != null ? `final price ${money(o.final_price, o.currency)}` : `estimate ${range(+o.price_low, +o.price_high, o.currency)}`}</p>
     ${c.step >= 0 ? `<ol class="track">${c.steps.map((s, i) => `<li class="${i < c.step || c.step === c.steps.length - 1 ? 'done' : i === c.step ? 'now' : ''}">${esc(s)}</li>`).join('')}</ol>` : ''}
     <p class="part-next">${esc(c.next)}</p>
+    ${(o.ready_by || o.printer_note) && ['accepted', 'printing', 'ready'].includes(o.status) ? `<p class="part-update"><strong>From your printer</strong>${o.ready_by ? ` · ready by ${esc(new Date(o.ready_by + 'T12:00').toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }))}` : ''}${o.printer_note ? `<br>${esc(o.printer_note)}` : ''}</p>` : ''}
+    ${o.photos?.length ? `<div class="part-photos">${['start', 'middle', 'done'].filter(k => o.photos.includes(k)).map(k => `<figure data-photo="${o.id}/${k}.jpg"><span></span><figcaption>${{ start: 'First layer', middle: 'Halfway', done: 'Finished' }[k]}</figcaption></figure>`).join('')}</div>` : ''}
   </li>`;
   }).join('');
+  showPhotos();
 }
 
 if (requireConfig($('#gate'))) {
