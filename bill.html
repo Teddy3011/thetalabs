@@ -94,7 +94,7 @@ const params = new URLSearchParams(location.search), cartId = params.get('cart')
 const fromStripe = params.has('paid');
 const COPY = {
   checking: ['We\'re checking your files.', 'We look at every part and set its final price. Nothing is charged yet. This page updates as soon as it\'s priced.'],
-  priced: ['Your final price is ready.', 'Pay by card, or choose to pay when you pick up. Printing starts once you do.'],
+  priced: ['Your final price is ready.', 'Choose how to pay below. Printing starts once you do.'],
   paid: ['Your bill.', ''],
   cancelled: ['This order was cancelled.', 'Email info@thetalab3d.shop with any questions.'],
 };

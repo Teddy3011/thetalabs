@@ -109,7 +109,23 @@ Until `assets/config.js` has real values, those pages show a "Preview · not liv
     6. Set `WHATSAPP_UPDATES = true` in `assets/config.js`. Until then checkout doesn't offer WhatsApp at all,
        so nobody gives a number that nothing would be sent to.
     Meta charges per message (utility templates cost a few cents).
-11. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
+11. **Printer profile and filament:** run `supabase/007_printer_profile.sql` (status, spools, ready date, notes,
+    progress photos), then `supabase/008_emails_filament.sql` (marking a part ready takes its filament off the
+    matching spool; the email log below).
+12. **Order emails (automatic):** customers with an email get one when the price is ready, when the printer sends a
+    note or ready date, when the finished photo is added, and when a part is ready. Guests without an email get none.
+    1. Run `supabase/008_emails_filament.sql`.
+    2. Make a free account at resend.com, add the domain `thetalab3d.shop` and add the DNS records it shows at your
+       domain host. Create an API key.
+    3. Deploy and add secrets (WEBHOOK_SECRET can be the same one WhatsApp uses):
+       ```bash
+       supabase functions deploy order-email --no-verify-jwt
+       supabase secrets set RESEND_API_KEY=... EMAIL_FROM="Theta Labs 3D <orders@thetalab3d.shop>" WEBHOOK_SECRET=...
+       ```
+    4. Supabase → Database → Webhooks → Create: table `orders`, event **Update**, type **Supabase Edge Functions**,
+       function `order-email`, HTTP header `x-webhook-secret` with the same WEBHOOK_SECRET.
+    Replies go to info@thetalab3d.shop. Resend's free plan covers 3,000 emails a month.
+13. Test: sign up a second account as a printer, approve it on `admin.html`, place an order from a third account,
    accept it as the printer.
 
 Notes: the free plan caps uploads at 50 MB per file, so the bucket limit is 50 MB (60 MB needs the Pro plan; see the

@@ -297,6 +297,11 @@ async function setupRig(user, me) {
     b.disabled = false;
     if (ok && !error) { msg($('#msg'), 'Printer details saved.'); f.closest('details').open = false; }
   });
+  // re-read the spools after a part is marked ready (the database takes its filament off)
+  return async () => {
+    const { data } = await sb.from('printer_profiles').select('*').eq('user_id', user.id).maybeSingle();
+    if (data) { rig = data; drawSpools(); showRig(me); }
+  };
 }
 
 if (requireConfig($('#gate'))) {
@@ -310,7 +315,7 @@ if (requireConfig($('#gate'))) {
   if (user && !allowed) msg($('#msg'), 'This screen is for approved printer owners. See the job board for how to apply.', true);
   else if (user) {
     $('#station').hidden = false;
-    setupRig(user, profile);
+    const refreshRig = setupRig(user, profile);
     const load = async () => {
       const { data, error } = await sb.from('orders').select('*').eq('printer_id', user.id).in('status', ['accepted', 'printing', 'ready']).order('accepted_at');
       if (error) return msg($('#msg'), error.message, true);
@@ -356,7 +361,9 @@ if (requireConfig($('#gate'))) {
       b.disabled = true;
       if (b.dataset.job) {
         const { error } = await sb.rpc('set_job_status', { order_id: b.dataset.job, new_status: b.dataset.to });
-        if (error) msg($('#msg'), error.message, true); else msg($('#msg'), '');
+        if (error) msg($('#msg'), error.message, true);
+        else msg($('#msg'), b.dataset.to === 'ready' ? 'Marked ready. Its filament comes off the matching spool, if you have one listed.' : '');
+        if (!error && b.dataset.to === 'ready') (await refreshRig)?.();
         await load();
       } else {
         const o = jobs.find(j => j.id === b.dataset.download);

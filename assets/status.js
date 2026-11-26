@@ -18,7 +18,7 @@ export function customerStatus(o, { contact = true } = {}) {
   const reach = contact ? 'We\'ll contact you' : 'Email info@thetalab3d.shop with your order number';
   const next = [
     'We\'re checking your file and setting the final price. Nothing is charged yet.',
-    'Your final price is ready. Pay by card or choose pay on pickup to start printing.',
+    'Your final price is ready. Choose how to pay on your order page to start printing.',
     `Paid for and waiting for a printer. ${pay}`.trim(),
     `Printing now. ${pay}`.trim(),
     delivery ? `Ready. ${reach} to arrange delivery.` : `Ready for pickup near ASU's Tempe campus. ${reach} to arrange a time.`,
